@@ -11,9 +11,8 @@ import { useTheme } from '@/components/ThemeProvider'
 import { Moon, Sun, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/use-toast'
-import { Sheet, SheetTrigger } from '@/components/ui/sheet'
 
-export function Header({ onOpenSidebar, SheetTrigger }: { onOpenSidebar?: () => void, SheetTrigger?: React.ElementType }) {
+export function Header({ onOpenSidebar, SheetTrigger }: Readonly<{ onOpenSidebar?: () => void, SheetTrigger?: React.ElementType }>) {
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
   const { toast } = useToast()
