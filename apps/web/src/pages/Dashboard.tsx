@@ -32,7 +32,7 @@ export function Dashboard() {
       </div>
       <div className="grid gap-6">
         {pendingPosts.map((post) => (
-          <Card key={post.id}>
+          <Card key={post.id} className="bg-card">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>

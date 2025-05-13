@@ -42,7 +42,7 @@ export function History() {
       </div>
       <div className="grid gap-6">
         {publishedPosts.map((post) => (
-          <Card key={post.id}>
+          <Card key={post.id} className="bg-card">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -51,7 +51,7 @@ export function History() {
                     Publicado em {new Date(post.publishedAt).toLocaleDateString()}
                   </CardDescription>
                 </div>
-                <Badge variant="success">{post.status}</Badge>
+                <Badge variant="secondary">{post.status}</Badge>
               </div>
             </CardHeader>
             <CardContent>

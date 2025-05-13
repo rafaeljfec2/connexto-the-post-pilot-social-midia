@@ -141,17 +141,17 @@ export function PendingPosts() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredPosts.map((post) => (
-          <Card key={post.id} className="flex flex-col">
+          <Card key={post.id} className="flex flex-col bg-card">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <CardTitle className="line-clamp-2">{post.content}</CardTitle>
-                  <CardDescription>
+                  <div className="text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       {format(post.createdAt, "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                     </div>
-                  </CardDescription>
+                  </div>
                 </div>
                 <Badge variant="secondary" className={statusColors[post.status]}>
                   {statusLabels[post.status]}

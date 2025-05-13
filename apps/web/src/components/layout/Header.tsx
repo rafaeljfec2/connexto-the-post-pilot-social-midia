@@ -27,7 +27,7 @@ export function Header() {
   }
 
   return (
-    <header className="border-b">
+    <header className="border-b border-border bg-card text-secondary-foreground">
       <div className="flex h-16 items-center justify-between px-6">
         <h1 className="text-xl font-semibold">The Post Pilot</h1>
         <div className="flex items-center gap-4">
