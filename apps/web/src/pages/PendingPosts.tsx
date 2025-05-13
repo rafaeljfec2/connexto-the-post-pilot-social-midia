@@ -211,6 +211,11 @@ export function PendingPosts() {
                 <Button variant="outline" className="flex-1">
                   Agendar
                 </Button>
+                {post.status === 'pending' && (
+                  <Button className="flex-1 bg-green-600 text-white hover:bg-green-700">
+                    Publicar
+                  </Button>
+                )}
                 <Button variant="destructive" className="flex-1">
                   Excluir
                 </Button>

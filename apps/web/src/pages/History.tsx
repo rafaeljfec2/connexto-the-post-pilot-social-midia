@@ -1,5 +1,12 @@
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BarChart2, Share2 } from 'lucide-react'
 
@@ -8,7 +15,8 @@ const publishedPosts = [
   {
     id: 1,
     title: 'O futuro do trabalho remoto',
-    content: 'O trabalho remoto veio para ficar e está transformando a forma como as empresas operam...',
+    content:
+      'O trabalho remoto veio para ficar e está transformando a forma como as empresas operam...',
     status: 'publicado',
     publishedAt: '2024-02-19T15:30:00Z',
     metrics: {
@@ -33,15 +41,13 @@ const publishedPosts = [
 
 export function History() {
   return (
-    <div className="container mx-auto px-2 sm:px-4 md:px-6 space-y-6">
+    <div className="container mx-auto space-y-6 px-2 sm:px-4 md:px-6">
       <div>
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Histórico de Posts</h2>
-        <p className="text-muted-foreground">
-          Visualize o desempenho dos seus posts publicados
-        </p>
+        <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Histórico de Posts</h2>
+        <p className="text-muted-foreground">Visualize o desempenho dos seus posts publicados</p>
       </div>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-        {publishedPosts.map((post) => (
+      <div className="mx-auto max-w-3xl space-y-4">
+        {publishedPosts.map(post => (
           <Card key={post.id} className="bg-card">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -55,7 +61,7 @@ export function History() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">{post.content}</p>
+              <p className="mb-4 text-muted-foreground">{post.content}</p>
               <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <BarChart2 className="mr-1 h-4 w-4" />
@@ -76,4 +82,4 @@ export function History() {
       </div>
     </div>
   )
-} 
+}
