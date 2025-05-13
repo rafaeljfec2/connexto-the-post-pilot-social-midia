@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { History, Settings, Timer, User } from 'lucide-react'
+import { History, Settings, Timer, User, CreditCard } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const navigation = [
@@ -12,6 +12,11 @@ const navigation = [
     name: 'Histórico',
     href: '/app/history',
     icon: History,
+  },
+  {
+    name: 'Assinatura',
+    href: '/app/subscription',
+    icon: CreditCard,
   },
   {
     name: 'Perfil',

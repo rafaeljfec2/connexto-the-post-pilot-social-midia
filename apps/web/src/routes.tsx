@@ -9,6 +9,7 @@ import { Settings } from '@/pages/Settings'
 import { Login } from '@/pages/Login'
 import { LandingPage } from '@/pages/LandingPage'
 import { Profile } from './pages/Profile'
+import { Subscription } from './pages/Subscription'
 
 export const router = createBrowserRouter([
   {
@@ -45,6 +46,10 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <Profile />,
+      },
+      {
+        path: 'subscription',
+        element: <Subscription />,
       },
     ],
   },
