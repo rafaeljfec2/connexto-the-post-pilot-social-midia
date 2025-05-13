@@ -40,6 +40,24 @@ const mockPosts: Post[] = [
     createdAt: new Date('2024-03-14T15:30:00'),
     updatedAt: new Date('2024-03-14T15:30:00'),
   },
+  {
+    id: '2',
+    content: 'Lançamento do nosso novo produto! Confira as principais funcionalidades.',
+    socialMedias: ['linkedin', 'facebook', 'instagram'],
+    status: 'scheduled',
+    scheduledFor: new Date('2024-03-20T15:00:00'),
+    createdAt: new Date('2024-03-14T15:30:00'),
+    updatedAt: new Date('2024-03-14T15:30:00'),
+  },
+  {
+    id: '2',
+    content: 'Lançamento do nosso novo produto! Confira as principais funcionalidades.',
+    socialMedias: ['linkedin', 'facebook', 'instagram'],
+    status: 'scheduled',
+    scheduledFor: new Date('2024-03-20T15:00:00'),
+    createdAt: new Date('2024-03-14T15:30:00'),
+    updatedAt: new Date('2024-03-14T15:30:00'),
+  },
 ]
 
 const statusColors: Record<PostStatus, string> = {

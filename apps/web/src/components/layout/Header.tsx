@@ -12,7 +12,10 @@ import { Moon, Sun, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/use-toast'
 
-export function Header({ onOpenSidebar, SheetTrigger }: Readonly<{ onOpenSidebar?: () => void, SheetTrigger?: React.ElementType }>) {
+export function Header({
+  onOpenSidebar,
+  SheetTrigger,
+}: Readonly<{ onOpenSidebar?: () => void; SheetTrigger?: React.ElementType }>) {
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -27,33 +30,45 @@ export function Header({ onOpenSidebar, SheetTrigger }: Readonly<{ onOpenSidebar
   }
 
   return (
-    <header className="rounded-lg shadow bg-white dark:bg-zinc-900 text-secondary-foreground">
-      <div className="flex h-16 items-center justify-between px-4 md:px-6">
+    <header className="fixed left-0 top-0 z-40 flex h-16 w-full items-center rounded-lg border-b bg-background bg-white px-4 text-secondary-foreground text-secondary-foreground shadow shadow dark:bg-zinc-900 md:px-6">
+      <div className="flex w-full items-center justify-between">
         <div className="flex items-center gap-2">
           {SheetTrigger ? (
             <SheetTrigger asChild>
               <button
-                className="md:hidden p-2 rounded hover:bg-muted focus:outline-none"
+                className="rounded p-2 hover:bg-muted focus:outline-none md:hidden"
                 aria-label="Abrir menu"
                 onClick={onOpenSidebar}
               >
-                <svg className="h-6 w-6 text-secondary-foreground" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg
+                  className="h-6 w-6 text-secondary-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
             </SheetTrigger>
           ) : (
             <button
-              className="md:hidden p-2 rounded hover:bg-muted focus:outline-none"
+              className="rounded p-2 hover:bg-muted focus:outline-none md:hidden"
               aria-label="Abrir menu"
               onClick={onOpenSidebar}
             >
-              <svg className="h-6 w-6 text-secondary-foreground" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg
+                className="h-6 w-6 text-secondary-foreground"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           )}
-          <h1 className="text-lg md:text-xl font-semibold">The Post Pilot</h1>
+          <h1 className="text-lg font-semibold md:text-xl">The Post Pilot</h1>
         </div>
         <div className="flex items-center gap-4">
           <Button
@@ -82,4 +97,4 @@ export function Header({ onOpenSidebar, SheetTrigger }: Readonly<{ onOpenSidebar
       </div>
     </header>
   )
-} 
+}
