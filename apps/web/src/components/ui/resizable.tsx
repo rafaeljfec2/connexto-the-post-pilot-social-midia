@@ -19,7 +19,7 @@ export function Resizable({
   className,
   children,
   ...props
-}: ResizableProps) {
+}: Readonly<ResizableProps>) {
   const [size, setSize] = React.useState(initial)
   const dragging = React.useRef(false)
 

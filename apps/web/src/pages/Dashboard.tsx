@@ -23,14 +23,14 @@ const pendingPosts = [
 
 export function Dashboard() {
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-2 sm:px-4 md:px-6 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Posts Pendentes</h2>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Posts Pendentes</h2>
         <p className="text-muted-foreground">
           Gerencie seus posts pendentes e agende publicações
         </p>
       </div>
-      <div className="grid gap-6">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {pendingPosts.map((post) => (
           <Card key={post.id} className="bg-card">
             <CardHeader>

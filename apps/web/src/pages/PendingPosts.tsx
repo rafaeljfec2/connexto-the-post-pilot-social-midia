@@ -14,7 +14,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -84,15 +83,15 @@ export function PendingPosts() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto px-2 sm:px-4 md:px-6 space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Posts Pendentes</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Posts Pendentes</h1>
           <p className="text-muted-foreground">
             Gerencie e agende seus posts para as redes sociais
           </p>
         </div>
-        <Button>
+        <Button className="w-full md:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Novo Post
         </Button>
@@ -109,7 +108,7 @@ export function PendingPosts() {
           />
         </div>
         <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as PostStatus | 'all')}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px]">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -125,7 +124,7 @@ export function PendingPosts() {
           value={socialMediaFilter}
           onValueChange={(value) => setSocialMediaFilter(value as SocialMedia | 'all')}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px]">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Rede Social" />
           </SelectTrigger>
@@ -139,7 +138,7 @@ export function PendingPosts() {
         </Select>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {filteredPosts.map((post) => (
           <Card key={post.id} className="flex flex-col bg-card">
             <CardHeader>

@@ -20,9 +20,13 @@ const navigation = [
   },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  mobile?: boolean
+}
+
+export function Sidebar({ mobile = false }: SidebarProps) {
   return (
-    <div className="flex w-64 flex-col border-r bg-card text-secondary-foreground">
+    <div className={mobile ? "flex w-64 flex-col border-r bg-card text-secondary-foreground" : "hidden md:flex w-64 flex-col border-r bg-card text-secondary-foreground"}>
       <div className="flex h-16 items-center border-b border-border px-6">
         <h2 className="text-lg font-semibold">Menu</h2>
       </div>
