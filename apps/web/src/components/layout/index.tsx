@@ -4,11 +4,11 @@ import { Sidebar } from './Sidebar';
 
 export function Layout() {
   return (
-    <div className="flex h-screen w-full">
-      <Sidebar />
-      <div className="flex flex-1 flex-col">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
+    <div className="relative h-screen w-full">
+      <Header />
+      <div className="flex h-full pt-16">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto p-6 w-full md:ml-64">
           <Outlet />
         </main>
       </div>

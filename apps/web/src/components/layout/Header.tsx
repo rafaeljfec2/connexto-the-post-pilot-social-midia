@@ -27,7 +27,7 @@ export function Header({ onOpenSidebar, SheetTrigger }: Readonly<{ onOpenSidebar
   }
 
   return (
-    <header className="border-b border-border bg-card text-secondary-foreground">
+    <header className="rounded-lg shadow bg-white dark:bg-zinc-900 text-secondary-foreground">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-2">
           {SheetTrigger ? (
@@ -57,7 +57,7 @@ export function Header({ onOpenSidebar, SheetTrigger }: Readonly<{ onOpenSidebar
         </div>
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
+            variant="default"
             size="icon"
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           >
