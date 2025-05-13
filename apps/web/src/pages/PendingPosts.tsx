@@ -77,8 +77,8 @@ export function PendingPosts() {
   })
 
   return (
-    <div className="container mx-auto space-y-6 px-2 sm:px-4 md:px-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6">
+      <div className="mx-auto flex max-w-3xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">Posts Pendentes</h1>
           <p className="text-muted-foreground">
@@ -91,112 +91,114 @@ export function PendingPosts() {
         </Button>
       </div>
 
-      <div className="flex w-full flex-col rounded-lg border bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar posts..."
-              className="pl-8"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
+      <div className="mx-auto max-w-3xl space-y-4">
+        <div className="flex w-full flex-col rounded-lg border bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar posts..."
+                className="pl-8"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={value => setStatusFilter(value as PostStatus | 'all')}
+            >
+              <SelectTrigger className="w-full md:w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="scheduled">Agendado</SelectItem>
+                <SelectItem value="published">Publicado</SelectItem>
+                <SelectItem value="failed">Falhou</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={socialMediaFilter}
+              onValueChange={value => setSocialMediaFilter(value as SocialMedia | 'all')}
+            >
+              <SelectTrigger className="w-full md:w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Rede Social" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as redes</SelectItem>
+                <SelectItem value="linkedin">LinkedIn</SelectItem>
+                <SelectItem value="twitter">Twitter</SelectItem>
+                <SelectItem value="instagram">Instagram</SelectItem>
+                <SelectItem value="facebook">Facebook</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={value => setStatusFilter(value as PostStatus | 'all')}
-          >
-            <SelectTrigger className="w-full md:w-[180px]">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os status</SelectItem>
-              <SelectItem value="pending">Pendente</SelectItem>
-              <SelectItem value="scheduled">Agendado</SelectItem>
-              <SelectItem value="published">Publicado</SelectItem>
-              <SelectItem value="failed">Falhou</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={socialMediaFilter}
-            onValueChange={value => setSocialMediaFilter(value as SocialMedia | 'all')}
-          >
-            <SelectTrigger className="w-full md:w-[180px]">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Rede Social" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as redes</SelectItem>
-              <SelectItem value="linkedin">LinkedIn</SelectItem>
-              <SelectItem value="twitter">Twitter</SelectItem>
-              <SelectItem value="instagram">Instagram</SelectItem>
-              <SelectItem value="facebook">Facebook</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredPosts.map(post => (
-          <Card key={post.id} className="flex flex-col bg-card">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="line-clamp-2">{post.content}</CardTitle>
-                  <div className="text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {format(post.createdAt, "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+        {filteredPosts
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+          .map(post => (
+            <Card key={post.id} className="flex flex-col bg-card transition-all hover:shadow-md">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="line-clamp-2 text-lg">{post.content}</CardTitle>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {format(post.createdAt, "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                      </div>
+                      {post.scheduledFor && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          Agendado para{' '}
+                          {format(post.scheduledFor, "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-                <Badge variant="secondary" className={statusColors[post.status]}>
-                  {statusLabels[post.status]}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <div className="flex flex-wrap gap-2">
-                {post.socialMedias.map(social => (
-                  <Badge key={social} variant="outline">
-                    {socialMediaIcons[social]}
+                  <Badge variant="secondary" className={statusColors[post.status]}>
+                    {statusLabels[post.status]}
                   </Badge>
-                ))}
-              </div>
-              {post.scheduledFor && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  Agendado para{' '}
-                  {format(post.scheduledFor, "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                 </div>
-              )}
-              {post.aiSuggestions && post.aiSuggestions.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm font-medium">Sugestões da IA:</p>
-                  <div className="space-y-2">
-                    {post.aiSuggestions.map((suggestion, index) => (
-                      <div key={index} className="rounded-lg bg-muted p-2 text-sm">
-                        {suggestion.content}
-                      </div>
-                    ))}
+              </CardHeader>
+              <CardContent className="flex-1">
+                <div className="flex flex-wrap gap-2">
+                  {post.socialMedias.map(social => (
+                    <Badge key={social} variant="outline" className="text-sm">
+                      {socialMediaIcons[social]}
+                    </Badge>
+                  ))}
+                </div>
+                {post.aiSuggestions && post.aiSuggestions.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium">Sugestões da IA:</p>
+                    <div className="space-y-2">
+                      {post.aiSuggestions.map((suggestion, index) => (
+                        <div key={index} className="rounded-lg bg-muted p-2 text-sm">
+                          {suggestion.content}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex gap-2">
-              <Button variant="outline" className="flex-1">
-                Editar
-              </Button>
-              <Button variant="outline" className="flex-1">
-                Agendar
-              </Button>
-              <Button variant="destructive" className="flex-1">
-                Excluir
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+                )}
+              </CardContent>
+              <CardFooter className="flex gap-2 border-t bg-muted/50 p-4">
+                <Button variant="outline" className="flex-1">
+                  Editar
+                </Button>
+                <Button variant="outline" className="flex-1">
+                  Agendar
+                </Button>
+                <Button variant="destructive" className="flex-1">
+                  Excluir
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
       </div>
     </div>
   )
