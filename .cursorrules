@@ -1,0 +1,191 @@
+# Cursor Rules for The Post Pilot Social Media on IA
+
+[project]
+name = "The Post Pilot Social Media on IA"
+description = "Aplicativo de gerenciamento e automação de posts e interações em redes sociais com inteligência artificial. Monorepo com frontend React (Vite) e backend Go."
+
+[structure]
+monorepo = true
+workspaces = ["apps/web", "apps/api"]
+frontend = "React (Vite, TypeScript)"
+backend = "Go (Fiber)"
+package_manager = "pnpm"
+
+[paths.ignore]
+folders = [
+  "node_modules",
+  "build",
+  "dist",
+  ".git",
+  "coverage",
+  "android",
+  "ios",
+  "bin",
+  "vendor"
+]
+
+[focus]
+folders = [
+  "apps/web/src",
+  "apps/web/src/components",
+  "apps/web/src/pages",
+  "apps/web/src/hooks",
+  "apps/web/src/services",
+  "apps/web/src/lib",
+  "apps/web/src/store",
+  "apps/web/src/assets",
+  "apps/api/internal",
+  "apps/api/pkg",
+  "apps/api/cmd",
+  "apps/api/config",
+  "apps/api/routes",
+  "apps/api/models",
+  "apps/api/services",
+  "apps/api/utils",
+  "apps/api/tests"
+]
+
+# apps/web/src structure:
+# ├─ components/       # visual components
+# ├─ pages/            # routes and pages
+# ├─ hooks/            # custom hooks (e.g., useAuth, usePosts)
+# ├─ services/         # API integrations (OpenAI, LinkedIn)
+# ├─ lib/              # utility functions
+# ├─ store/            # zustand or auth store
+# ├─ assets/           # images, icons
+
+[tech_stack]
+frontend = ["React", "Vite", "TypeScript", "React Query", "Zustand", "React Native Elements", "Styled Components", "ESLint", "Prettier"]
+backend = ["Go", "Fiber", "godotenv", "OpenAI API", "PostgreSQL", "JWT", "golangci-lint"]
+
+[conventions]
+linguagem = "Todo código, documentação e comentários devem ser em inglês. Mensagens de UI em português."
+arquitetura = "Clean Architecture, separação clara de camadas, uso de hooks customizados, centralização de temas e estilos, validação de formulários, tratamento de erros, logging centralizado."
+boas_praticas = [
+  "Evitar duplicação de código",
+  "Funções pequenas e responsabilidades únicas",
+  "Componentes reutilizáveis",
+  "Evitar lógica de negócio em componentes visuais",
+  "Gerenciamento de estado local com hooks, global com Zustand",
+  "Navegação tipada",
+  "Validação e sanitização de entradas",
+  "Uso de variáveis de ambiente para configs sensíveis",
+  "Testes automatizados para novas features e correções",
+  "Lint e análise estática antes de push/merge",
+  "CI/CD com testes, lint, build e análise de cobertura"
+]
+
+[convencao_arquivos]
+padroes = [
+  "componentes: PascalCase — ex: PostCard.tsx",
+  "hooks: camelCase começando com 'use' — ex: useAIGeneration.ts",
+  "servicos: camelCase — ex: socialMediaService.ts",
+  "paginas: PascalCase — ex: Dashboard.tsx",
+  "estilos: camelCase ou global — ex: postCard.module.css ou global.css",
+  "contextos: camelCase — ex: aiContext.tsx",
+  "testes: Mesmo nome do alvo + .test — ex: PostCard.test.tsx",
+  "tipos_interfaces: PascalCase — ex: PostTypes.ts",
+  "constantes: camelCase — ex: appConstants.ts ou colors.ts"
+]
+regras = [
+  "Evitar nomes genéricos como index.ts fora de contexto",
+  "Evitar arquivos misturando responsabilidades",
+  "Evitar nomes ambíguos ou sem clareza de propósito"
+]
+
+[seguranca]
+boas_praticas = [
+  "Nunca expor segredos ou chaves diretamente no código",
+  "Usar arquivos .env e bibliotecas como godotenv/react-native-dotenv para variáveis sensíveis",
+  "Sanitizar todas as entradas de usuário",
+  "Evitar o uso de eval, new Function ou execução dinâmica de código",
+  "Validar e tratar respostas de APIs externas",
+  "Usar HTTPS em todas as comunicações",
+  "Atualizar dependências com alertas de segurança",
+  "Monitorar pacotes com npm audit, Snyk, golangci-lint",
+  "Implementar autenticação segura e controle de acesso básico",
+  "Desabilitar logs sensíveis em produção",
+  "Implementar rate limiting para chamadas de IA",
+  "Validar e sanitizar conteúdo gerado por IA antes de postar",
+  "Manter histórico de posts e interações para auditoria"
+]
+
+[testes]
+requisitos = [
+  "Testes unitários para lógica de negócio",
+  "Testes de integração para fluxos entre módulos/sistemas",
+  "Testes claros, descritivos e independentes",
+  "Cobertura mínima de 80% para código crítico"
+]
+
+[review]
+ativar = true
+acoes = [
+  "Sugerir melhorias técnicas",
+  "Identificar complexidades desnecessárias",
+  "Apontar padrões divergentes"
+]
+
+[commit]
+padrao = "Sempre sugerir mensagem de commit em inglês, clara e objetiva, refletindo a alteração realizada."
+acoes = [
+  "quando usuário digitar commit, sugerir uma mensagem de commit para o usuário em inglês",
+  "analisar as alterações feitas nos arquivos",
+  "categorizar as mudanças (feat, fix, docs, style, refactor, test, chore)",
+  "gerar mensagem seguindo o padrão: <tipo>(<escopo>): <descrição>",
+  "incluir detalhes relevantes das alterações",
+  "sugerir mensagem em inglês mesmo que o usuário escreva em português"
+]
+
+[backend.conventions]
+linguagem = "Todo código, documentação e comentários devem ser em inglês."
+arquitetura = "Clean Architecture, separação clara de camadas (handlers, services, repositories), uso de interfaces para desacoplamento, injeção de dependências."
+boas_praticas = [
+  "Seguir o padrão de projeto RESTful",
+  "Usar middleware para logging, autenticação, CORS e tratamento de erros",
+  "Centralizar tratamento de erros com respostas padronizadas",
+  "Utilizar variáveis de ambiente para configurações sensíveis (com godotenv)",
+  "Implementar validação de entrada com bibliotecas como validator",
+  "Documentar APIs com Swagger",
+  "Escrever testes unitários e de integração para handlers e serviços",
+  "Usar context.Context para gerenciar timeouts e cancelamentos",
+  "Evitar duplicação de código, extraindo lógica comum para pacotes utilitários",
+  "Manter logs estruturados e centralizados",
+  "Implementar rate limiting e proteção contra ataques comuns",
+  "Versionar APIs (ex: /api/v1/...)"
+]
+
+[frontend.conventions]
+linguagem = "Todo código, documentação e comentários devem ser em inglês. Mensagens de UI em português."
+arquitetura = "Componentes reutilizáveis, hooks customizados, gerenciamento de estado com Zustand, validação de formulários, tratamento de erros, logging centralizado."
+boas_praticas = [
+  "Seguir princípios de Clean Code e SOLID",
+  "Usar hooks customizados para encapsular lógica de negócio",
+  "Evitar lógica de negócio em componentes visuais",
+  "Gerenciar estado local com hooks, global com Zustand",
+  "Implementar validação de formulários com bibliotecas como zod ou yup",
+  "Usar variáveis de ambiente para configurações sensíveis (com react-native-dotenv)",
+  "Escrever testes unitários e de integração para componentes e hooks",
+  "Garantir acessibilidade (ARIA, semântica HTML, contraste, etc.)",
+  "Otimizar performance (memoização, lazy loading, code splitting)",
+  "Manter logs estruturados e centralizados",
+  "Implementar tratamento de erros e feedback ao usuário",
+  "Usar TypeScript para tipagem estática",
+  "Seguir padrões de design system e reutilização de componentes"
+]
+
+[monorepo.conventions]
+linguagem = "Todo código, documentação e comentários devem ser em inglês."
+arquitetura = "Estrutura monorepo com pnpm workspaces, separação clara de aplicações (frontend, backend), uso de pacotes compartilhados, scripts centralizados."
+boas_praticas = [
+  "Usar pnpm workspaces para gerenciar dependências e scripts",
+  "Centralizar configurações de lint, testes e build no nível raiz",
+  "Evitar duplicação de dependências entre pacotes",
+  "Utilizar pacotes compartilhados para lógica comum",
+  "Manter scripts de CI/CD centralizados e automatizados",
+  "Documentar a estrutura do monorepo e fluxo de desenvolvimento",
+  "Implementar versionamento semântico para pacotes internos",
+  "Usar ferramentas como Turborepo ou Nx para otimização de builds",
+  "Garantir que cada aplicação seja independente e testável",
+  "Manter logs e métricas centralizados para monitoramento"
+]

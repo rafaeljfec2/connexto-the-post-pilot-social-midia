@@ -1,0 +1,30 @@
+{
+  "name": "post-pilot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Social media automation platform with AI integration",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "build:web": "pnpm --filter web build",
+    "build:api": "pnpm --filter api build",
+    "test:web": "pnpm --filter web test",
+    "test:api": "pnpm --filter api test",
+    "lint:web": "pnpm --filter web lint",
+    "lint:api": "pnpm --filter api lint",
+    "setup": "pnpm install && cd apps/api && go mod tidy && cd ../..",
+    "dev": "pnpm run dev:web & cd apps/api && go run main.go"
+  },
+  "keywords": [
+    "social-media",
+    "ai",
+    "automation",
+    "monorepo"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
