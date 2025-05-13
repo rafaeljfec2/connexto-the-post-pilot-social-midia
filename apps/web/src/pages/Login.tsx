@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
+import { FcGoogle } from 'react-icons/fc';
+import { SiLinkedin } from 'react-icons/si';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -38,16 +40,11 @@ export function Login() {
   async function onSubmit(data: LoginFormValues) {
     try {
       // TODO: Implementar chamada à API de autenticação
-      console.log('Login data:', data);
-      
-      // Simulando login bem-sucedido
       localStorage.setItem('isAuthenticated', 'true');
-      
       toast({
         title: 'Login realizado com sucesso!',
         description: 'Redirecionando para o dashboard...',
       });
-
       navigate(from, { replace: true });
     } catch (error) {
       toast({
@@ -58,14 +55,43 @@ export function Login() {
     }
   }
 
+  function handleSocialLogin(provider: 'google' | 'linkedin') {
+    // TODO: Integrar autenticação real
+    toast({
+      title: `Login com ${provider === 'google' ? 'Google' : 'LinkedIn'} não implementado`,
+      description: 'Integração real deve ser feita via OAuth.',
+    });
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="mx-auto w-full max-w-md space-y-6 p-6">
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="mx-auto w-full max-w-md rounded-xl border border-border bg-card shadow-lg p-8 space-y-8">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold">Login</h1>
-          <p className="text-muted-foreground">
-            Entre com suas credenciais para acessar sua conta
-          </p>
+          <h1 className="text-3xl font-bold">The Post Pilot</h1>
+          <p className="text-muted-foreground">Acesse sua conta para gerenciar seus posts</p>
+        </div>
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full flex items-center gap-2 justify-center"
+            onClick={() => handleSocialLogin('google')}
+          >
+            <FcGoogle className="h-5 w-5" /> Entrar com Google
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full flex items-center gap-2 justify-center"
+            onClick={() => handleSocialLogin('linkedin')}
+          >
+            <SiLinkedin className="h-5 w-5 text-[#0077B5]" /> Entrar com LinkedIn
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 my-2">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-xs text-muted-foreground">ou entre com email</span>
+          <div className="flex-1 h-px bg-border" />
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
