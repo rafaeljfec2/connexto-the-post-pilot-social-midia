@@ -1,13 +1,14 @@
-import { createBrowserRouter } from 'react-router-dom';
-import { ErrorBoundary } from '@/components/error/ErrorBoundary';
-import { ErrorPage } from '@/components/error/ErrorPage';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { Layout } from '@/components/layout';
-import { PendingPosts } from '@/pages/PendingPosts';
-import { History } from '@/pages/History';
-import { Settings } from '@/pages/Settings';
-import { Login } from '@/pages/Login';
-import { LandingPage } from '@/pages/LandingPage';
+import { createBrowserRouter } from 'react-router-dom'
+import { ErrorBoundary } from '@/components/error/ErrorBoundary'
+import { ErrorPage } from '@/components/error/ErrorPage'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { Layout } from '@/components/layout'
+import { PendingPosts } from '@/pages/PendingPosts'
+import { History } from '@/pages/History'
+import { Settings } from '@/pages/Settings'
+import { Login } from '@/pages/Login'
+import { LandingPage } from '@/pages/LandingPage'
+import { Profile } from './pages/Profile'
 
 export const router = createBrowserRouter([
   {
@@ -41,10 +42,14 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <Settings />,
       },
+      {
+        path: 'profile',
+        element: <Profile />,
+      },
     ],
   },
   {
     path: '*',
     element: <ErrorPage code={404} />,
   },
-]); 
+])

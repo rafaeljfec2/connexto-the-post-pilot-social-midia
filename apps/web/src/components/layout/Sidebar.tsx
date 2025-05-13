@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { History, Settings, Timer } from 'lucide-react'
+import { History, Settings, Timer, User } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const navigation = [
@@ -12,6 +12,11 @@ const navigation = [
     name: 'Histórico',
     href: '/app/history',
     icon: History,
+  },
+  {
+    name: 'Perfil',
+    href: '/app/profile',
+    icon: User,
   },
   {
     name: 'Configurações',
@@ -29,7 +34,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
     return (
       <div className="flex w-64 flex-col bg-card text-secondary-foreground">
         <nav className="flex-1 space-y-1 p-4">
-          {navigation.map((item) => (
+          {navigation.map(item => (
             <NavLink
               key={item.name}
               to={item.href}
@@ -52,9 +57,9 @@ export function Sidebar({ mobile = false }: SidebarProps) {
   }
   // Desktop: fixed sidebar below header
   return (
-    <aside className="hidden md:flex fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 flex-col bg-card text-secondary-foreground z-30 mt-4">
+    <aside className="fixed left-0 top-16 z-30 mt-4 hidden h-[calc(100vh-4rem)] w-64 flex-col bg-card text-secondary-foreground md:flex">
       <nav className="flex-1 space-y-1 p-4">
-        {navigation.map((item) => (
+        {navigation.map(item => (
           <NavLink
             key={item.name}
             to={item.href}
@@ -74,4 +79,4 @@ export function Sidebar({ mobile = false }: SidebarProps) {
       </nav>
     </aside>
   )
-} 
+}
