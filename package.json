@@ -6,7 +6,7 @@
   "scripts": {
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api dev",
-    "build:web": "pnpm --filter web build",
+    "build:web": "pnpm --filter post-pilot-web build",
     "build:api": "pnpm --filter api build",
     "test:web": "pnpm --filter web test",
     "test:api": "pnpm --filter api test",
