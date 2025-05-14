@@ -10,6 +10,9 @@ import (
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+
+	"apps/api/internal/repositories"
+	"apps/api/internal/services"
 )
 
 func main() {
@@ -18,11 +21,19 @@ func main() {
 		log.Println("Warning: .env file not found")
 	}
 
-	// Create new Fiber app
 	app := gin.Default()
 
 	// Swagger docs
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// Inicialização dos repositórios e serviços
+	repo, err := repositories.NewUserRepository()
+	if err != nil {
+		log.Fatalf("Failed to initialize user repository: %v", err)
+	}
+	authService := services.NewAuthService(repo)
+	authHandler := app.NewAuthHandler(authService)
+	app.RegisterAuthRoutes(app, authHandler)
 
 	// Get port from environment variable or use default
 	port := os.Getenv("PORT")
@@ -30,14 +41,8 @@ func main() {
 		port = "8080"
 	}
 
-	// Log startup information
 	log.Printf("Starting server on port %s...", port)
-	log.Println("Available routes:")
-	for _, route := range app.GetRoutes() {
-		log.Printf("%s %s", route.Method, route.Path)
-	}
 
-	// Start server
 	log.Fatal(app.Run(":" + port))
 }
 
