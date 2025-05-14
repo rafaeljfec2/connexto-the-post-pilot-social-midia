@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"apps/api/internal/db"
@@ -17,6 +18,7 @@ type UserRepository interface {
 	FindBySocialProvider(ctx context.Context, provider models.AuthProvider, providerId string) (*models.User, error)
 	Create(ctx context.Context, user *models.User) error
 	Update(ctx context.Context, user *models.User) error
+	FindByID(ctx context.Context, id string) (*models.User, error)
 }
 
 type userRepository struct {
@@ -65,4 +67,17 @@ func (r *userRepository) Update(ctx context.Context, user *models.User) error {
 	}
 	_, err := r.collection.ReplaceOne(ctx, bson.M{"_id": user.ID}, user)
 	return err
+}
+
+func (r *userRepository) FindByID(ctx context.Context, id string) (*models.User, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	var user models.User
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	return &user, err
 }

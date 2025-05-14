@@ -181,7 +181,10 @@ func (s *authService) RefreshJWT(refreshToken string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Buscar usuário por ID
-	// (Implementação depende do método de busca por ID no repositório)
-	return "", errors.New("not implemented: buscar usuário por ID e gerar novo JWT")
+	ctx := context.Background()
+	user, err := s.repo.FindByID(ctx, userId)
+	if err != nil || user == nil {
+		return "", errors.New("user not found")
+	}
+	return s.GenerateJWT(user)
 }
