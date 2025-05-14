@@ -17,6 +17,12 @@ type AuthService interface {
 	Register(ctx context.Context, name, email, password string) (*models.User, error)
 	Login(ctx context.Context, email, password string) (*models.User, string, error)
 	GenerateJWT(user *models.User) (string, error)
+	// Social login
+	LoginWithSocial(ctx context.Context, provider models.AuthProvider, providerId, email, name, avatarUrl string) (*models.User, string, error)
+	// Refresh token
+	GenerateRefreshToken(user *models.User) (string, error)
+	ValidateRefreshToken(tokenStr string) (string, error)
+	RefreshJWT(refreshToken string) (string, error)
 }
 
 type authService struct {
@@ -95,4 +101,87 @@ func (s *authService) GenerateJWT(user *models.User) (string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.jwtSecret))
+}
+
+func (s *authService) LoginWithSocial(ctx context.Context, provider models.AuthProvider, providerId, email, name, avatarUrl string) (*models.User, string, error) {
+	user, err := s.repo.FindBySocialProvider(ctx, provider, providerId)
+	if err != nil {
+		return nil, "", err
+	}
+	if user == nil {
+		// Novo usuário
+		social := models.SocialAccount{
+			Provider:   provider,
+			ProviderId: providerId,
+			Email:      email,
+			Name:       name,
+			AvatarUrl:  avatarUrl,
+		}
+		user = &models.User{
+			Name:           name,
+			Email:          email,
+			AvatarUrl:      avatarUrl,
+			EmailVerified:  true,
+			SocialAccounts: []models.SocialAccount{social},
+		}
+		err = s.repo.Create(ctx, user)
+		if err != nil {
+			return nil, "", err
+		}
+	} else {
+		// Atualiza dados básicos se necessário
+		user.Name = name
+		user.AvatarUrl = avatarUrl
+		user.EmailVerified = true
+		err = s.repo.Update(ctx, user)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	token, err := s.GenerateJWT(user)
+	if err != nil {
+		return nil, "", err
+	}
+	return user, token, nil
+}
+
+func (s *authService) GenerateRefreshToken(user *models.User) (string, error) {
+	claims := jwt.MapClaims{
+		"sub":  user.ID.Hex(),
+		"type": "refresh",
+		"exp":  time.Now().Add(7 * 24 * time.Hour).Unix(), // 7 dias
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.jwtSecret))
+}
+
+func (s *authService) ValidateRefreshToken(tokenStr string) (string, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("invalid signing method")
+		}
+		return []byte(s.jwtSecret), nil
+	})
+	if err != nil || !token.Valid {
+		return "", errors.New("invalid refresh token")
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims["type"] != "refresh" {
+		return "", errors.New("invalid refresh token type")
+	}
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		return "", errors.New("invalid refresh token sub")
+	}
+	return userId, nil
+}
+
+func (s *authService) RefreshJWT(refreshToken string) (string, error) {
+	userId, err := s.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return "", err
+	}
+	// Buscar usuário por ID
+	// (Implementação depende do método de busca por ID no repositório)
+	return "", errors.New("not implemented: buscar usuário por ID e gerar novo JWT")
 }
