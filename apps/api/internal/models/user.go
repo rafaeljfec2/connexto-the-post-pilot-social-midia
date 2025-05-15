@@ -1,11 +1,13 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// AuthProvider represents the authentication provider type
 type AuthProvider string
 
 const (
@@ -14,23 +16,59 @@ const (
 	AuthProviderLinkedIn AuthProvider = "linkedin"
 )
 
+// SocialAccount represents a social media account linked to a user
 type SocialAccount struct {
-	Provider   AuthProvider `bson:"provider" json:"provider"`
-	ProviderId string       `bson:"providerId" json:"providerId"`
-	Email      string       `bson:"email" json:"email"`
-	Name       string       `bson:"name,omitempty" json:"name,omitempty"`
-	AvatarUrl  string       `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty"`
+	Provider   AuthProvider `bson:"provider" json:"provider" example:"google"`
+	ProviderId string       `bson:"providerId" json:"providerId" example:"123456789"`
+	Email      string       `bson:"email" json:"email" example:"john@example.com"`
+	Name       string       `bson:"name,omitempty" json:"name,omitempty" example:"John Doe"`
+	AvatarUrl  string       `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty" example:"https://example.com/avatar.jpg"`
 }
 
+// User represents a user in the system
 type User struct {
-	ID             primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Email          string             `bson:"email" json:"email"`
+	ID             primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Email          string             `bson:"email" json:"email" example:"john@example.com"`
 	PasswordHash   string             `bson:"passwordHash,omitempty" json:"-"`
-	Name           string             `bson:"name" json:"name"`
-	AvatarUrl      string             `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty"`
+	Name           string             `bson:"name" json:"name" example:"John Doe"`
+	AvatarUrl      string             `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty" example:"https://example.com/avatar.jpg"`
 	SocialAccounts []SocialAccount    `bson:"socialAccounts,omitempty" json:"socialAccounts,omitempty"`
-	EmailVerified  bool               `bson:"emailVerified" json:"emailVerified"`
-	CreatedAt      time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt      time.Time          `bson:"updatedAt" json:"updatedAt"`
-	LastLogin      *time.Time         `bson:"lastLogin,omitempty" json:"lastLogin,omitempty"`
+	EmailVerified  bool               `bson:"emailVerified" json:"emailVerified" example:"true"`
+	CreatedAt      time.Time          `bson:"createdAt" json:"createdAt" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt      time.Time          `bson:"updatedAt" json:"updatedAt" example:"2024-01-01T00:00:00Z"`
+	LastLogin      *time.Time         `bson:"lastLogin,omitempty" json:"lastLogin,omitempty" example:"2024-01-01T00:00:00Z"`
+}
+
+// MarshalJSON implementa a interface json.Marshaler para User
+func (u *User) MarshalJSON() ([]byte, error) {
+	type Alias User
+	return json.Marshal(&struct {
+		ID string `json:"id"`
+		*Alias
+	}{
+		ID:    u.ID.Hex(),
+		Alias: (*Alias)(u),
+	})
+}
+
+// UnmarshalJSON implementa a interface json.Unmarshaler para User
+func (u *User) UnmarshalJSON(data []byte) error {
+	type Alias User
+	aux := &struct {
+		ID string `json:"id"`
+		*Alias
+	}{
+		Alias: (*Alias)(u),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.ID != "" {
+		id, err := primitive.ObjectIDFromHex(aux.ID)
+		if err != nil {
+			return err
+		}
+		u.ID = id
+	}
+	return nil
 }

@@ -6,6 +6,7 @@
     "dev": "go run main.go",
     "build": "go build -o bin/api main.go",
     "test": "go test ./...",
-    "lint": "golangci-lint run"
+    "lint": "golangci-lint run",
+    "swagger": "swag init --parseDependency --parseInternal"
   }
 }

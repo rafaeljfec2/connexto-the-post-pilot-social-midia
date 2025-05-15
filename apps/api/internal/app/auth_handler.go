@@ -1,140 +1,136 @@
+// Package app implements the application handlers
 package app
 
 import (
-	"net/http"
-
-	"apps/api/internal/models"
-	"apps/api/internal/services"
-
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+	"github.com/postpilot/api/internal/models"
+	"github.com/postpilot/api/internal/services"
 )
 
+// AuthHandler handles authentication related requests
 type AuthHandler struct {
 	AuthService services.AuthService
 }
 
+// NewAuthHandler creates a new AuthHandler instance
 func NewAuthHandler(authService services.AuthService) *AuthHandler {
 	return &AuthHandler{AuthService: authService}
 }
 
+type registerRequest struct {
+	Name     string `json:"name" example:"John Doe"`
+	Email    string `json:"email" example:"john@example.com"`
+	Password string `json:"password" example:"123456"`
+}
+
 // Register godoc
 // @Summary Register a new user
+// @Description Register a new user with name, email and password
 // @Tags Auth
 // @Accept json
 // @Produce json
 // @Param input body registerRequest true "User registration info"
 // @Success 201 {object} models.User
-// @Failure 400 {object} gin.H
-// @Router /api/v1/auth/register [post]
-type registerRequest struct {
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+// @Failure 400 {object} fiber.Map
+// @Router /auth/register [post]
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
+	var req registerRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	user, err := h.AuthService.Register(c.Context(), req.Name, req.Email, req.Password)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
-func (h *AuthHandler) Register(c *gin.Context) {
-	var req registerRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	user, err := h.AuthService.Register(c.Request.Context(), req.Name, req.Email, req.Password)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusCreated, user)
+type loginRequest struct {
+	Email    string `json:"email" example:"john@example.com"`
+	Password string `json:"password" example:"123456"`
+}
+type loginResponse struct {
+	User  *models.User `json:"user"`
+	Token string       `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
 // Login godoc
 // @Summary Login with email and password
+// @Description Authenticate user with email and password
 // @Tags Auth
 // @Accept json
 // @Produce json
 // @Param input body loginRequest true "Login info"
 // @Success 200 {object} loginResponse
-// @Failure 400 {object} gin.H
-// @Router /api/v1/auth/login [post]
-type loginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-type loginResponse struct {
-	User  *models.User `json:"user"`
-	Token string       `json:"token"`
+// @Failure 400 {object} fiber.Map
+// @Router /auth/login [post]
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
+	var req loginRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	user, token, err := h.AuthService.Login(c.Context(), req.Email, req.Password)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(fiber.StatusOK).JSON(loginResponse{User: user, Token: token})
 }
 
-func (h *AuthHandler) Login(c *gin.Context) {
-	var req loginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	user, token, err := h.AuthService.Login(c.Request.Context(), req.Email, req.Password)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, loginResponse{User: user, Token: token})
+type socialLoginRequest struct {
+	Provider   models.AuthProvider `json:"provider" example:"google" enums:"google,linkedin"`
+	ProviderId string              `json:"providerId" example:"123456789"`
+	Email      string              `json:"email" example:"john@example.com"`
+	Name       string              `json:"name" example:"John Doe"`
+	AvatarUrl  string              `json:"avatarUrl" example:"https://example.com/avatar.jpg"`
 }
 
 // SocialLogin godoc
 // @Summary Login or register with social provider
+// @Description Authenticate or register user with social provider (Google, LinkedIn)
 // @Tags Auth
 // @Accept json
 // @Produce json
 // @Param input body socialLoginRequest true "Social login info"
 // @Success 200 {object} loginResponse
-// @Failure 400 {object} gin.H
-// @Router /api/v1/auth/social [post]
-type socialLoginRequest struct {
-	Provider   models.AuthProvider `json:"provider" binding:"required"`
-	ProviderId string              `json:"providerId" binding:"required"`
-	Email      string              `json:"email" binding:"required,email"`
-	Name       string              `json:"name"`
-	AvatarUrl  string              `json:"avatarUrl"`
+// @Failure 400 {object} fiber.Map
+// @Router /auth/social [post]
+func (h *AuthHandler) SocialLogin(c *fiber.Ctx) error {
+	var req socialLoginRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	user, token, err := h.AuthService.LoginWithSocial(c.Context(), req.Provider, req.ProviderId, req.Email, req.Name, req.AvatarUrl)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(fiber.StatusOK).JSON(loginResponse{User: user, Token: token})
 }
 
-func (h *AuthHandler) SocialLogin(c *gin.Context) {
-	var req socialLoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	user, token, err := h.AuthService.LoginWithSocial(c.Request.Context(), req.Provider, req.ProviderId, req.Email, req.Name, req.AvatarUrl)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, loginResponse{User: user, Token: token})
+type refreshRequest struct {
+	RefreshToken string `json:"refreshToken" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+}
+type refreshResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
 // RefreshToken godoc
 // @Summary Refresh JWT using refresh token
+// @Description Get a new JWT token using a valid refresh token
 // @Tags Auth
 // @Accept json
 // @Produce json
 // @Param input body refreshRequest true "Refresh token info"
 // @Success 200 {object} refreshResponse
-// @Failure 400 {object} gin.H
-// @Router /api/v1/auth/refresh [post]
-type refreshRequest struct {
-	RefreshToken string `json:"refreshToken" binding:"required"`
-}
-type refreshResponse struct {
-	Token string `json:"token"`
-}
-
-func (h *AuthHandler) RefreshToken(c *gin.Context) {
+// @Failure 400 {object} fiber.Map
+// @Router /auth/refresh [post]
+func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	var req refreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	token, err := h.AuthService.RefreshJWT(req.RefreshToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
-	c.JSON(http.StatusOK, refreshResponse{Token: token})
+	return c.Status(fiber.StatusOK).JSON(refreshResponse{Token: token})
 }

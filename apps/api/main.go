@@ -4,27 +4,47 @@ import (
 	"log"
 	"os"
 
-	_ "apps/api/docs" // swagger docs
+	_ "github.com/postpilot/api/docs" // swagger docs (gerado pelo swag)
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"apps/api/internal/repositories"
-	"apps/api/internal/services"
+	appPkg "github.com/postpilot/api/internal/app"
+	"github.com/postpilot/api/internal/repositories"
+	"github.com/postpilot/api/internal/services"
 )
 
+// @title The Post Pilot API
+// @version 1.0
+// @description API for The Post Pilot Social Media Management
+// @host localhost:8081
+// @BasePath /the-post-pilot/v1
+// @schemes http https
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 func main() {
-	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Println("Warning: .env file not found")
+	_ = godotenv.Load() // Carrega variáveis do .env
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
 
-	app := gin.Default()
+	app := fiber.New(fiber.Config{
+		AppName: "Post Pilot API",
+	})
+
+	// Middlewares
+	app.Use(logger.New())
+	app.Use(cors.New())
 
 	// Swagger docs
-	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	app.Get("/swagger/*", swagger.New())
 
 	// Inicialização dos repositórios e serviços
 	repo, err := repositories.NewUserRepository()
@@ -32,22 +52,11 @@ func main() {
 		log.Fatalf("Failed to initialize user repository: %v", err)
 	}
 	authService := services.NewAuthService(repo)
-	authHandler := app.NewAuthHandler(authService)
-	app.RegisterAuthRoutes(app, authHandler)
+	authHandler := appPkg.NewAuthHandler(authService)
 
-	// Get port from environment variable or use default
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	// Centralize as rotas
+	appPkg.RegisterRoutes(app, authHandler)
 
-	log.Printf("Starting server on port %s...", port)
-
-	log.Fatal(app.Run(":" + port))
+	log.Printf("Starting Fiber server on port %s...", port)
+	log.Fatal(app.Listen(":" + port))
 }
-
-// @title The Post Pilot API
-// @version 1.0
-// @description API for The Post Pilot Social Media Management
-// @host localhost:8080
-// @BasePath /api/v1

@@ -1,0 +1,249 @@
+basePath: /the-post-pilot/v1
+definitions:
+  app.loginRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: "123456"
+        type: string
+    type: object
+  app.loginResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  app.refreshRequest:
+    properties:
+      refreshToken:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  app.refreshResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  app.registerRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: "123456"
+        type: string
+    type: object
+  app.socialLoginRequest:
+    properties:
+      avatarUrl:
+        example: https://example.com/avatar.jpg
+        type: string
+      email:
+        example: john@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      provider:
+        allOf:
+        - $ref: '#/definitions/models.AuthProvider'
+        enum:
+        - google
+        - linkedin
+        example: google
+      providerId:
+        example: "123456789"
+        type: string
+    type: object
+  fiber.Map:
+    additionalProperties: true
+    type: object
+  models.AuthProvider:
+    enum:
+    - local
+    - google
+    - linkedin
+    type: string
+    x-enum-varnames:
+    - AuthProviderLocal
+    - AuthProviderGoogle
+    - AuthProviderLinkedIn
+  models.SocialAccount:
+    properties:
+      avatarUrl:
+        example: https://example.com/avatar.jpg
+        type: string
+      email:
+        example: john@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      provider:
+        allOf:
+        - $ref: '#/definitions/models.AuthProvider'
+        example: google
+      providerId:
+        example: "123456789"
+        type: string
+    type: object
+  models.User:
+    properties:
+      avatarUrl:
+        example: https://example.com/avatar.jpg
+        type: string
+      createdAt:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      email:
+        example: john@example.com
+        type: string
+      emailVerified:
+        example: true
+        type: boolean
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      lastLogin:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      name:
+        example: John Doe
+        type: string
+      socialAccounts:
+        items:
+          $ref: '#/definitions/models.SocialAccount'
+        type: array
+      updatedAt:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: API for The Post Pilot Social Media Management
+  title: The Post Pilot API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: Login info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/app.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.loginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Login with email and password
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new JWT token using a valid refresh token
+      parameters:
+      - description: Refresh token info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/app.refreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.refreshResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Refresh JWT using refresh token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with name, email and password
+      parameters:
+      - description: User registration info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/app.registerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Register a new user
+      tags:
+      - Auth
+  /auth/social:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate or register user with social provider (Google, LinkedIn)
+      parameters:
+      - description: Social login info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/app.socialLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.loginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Login or register with social provider
+      tags:
+      - Auth
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

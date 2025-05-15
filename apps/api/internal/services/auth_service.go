@@ -9,8 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"apps/api/internal/models"
-	"apps/api/internal/repositories"
+	"github.com/postpilot/api/internal/models"
+	"github.com/postpilot/api/internal/repositories"
 )
 
 type AuthService interface {

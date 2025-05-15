@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"apps/api/internal/db"
-	"apps/api/internal/models"
+	"github.com/postpilot/api/internal/db"
+	"github.com/postpilot/api/internal/models"
 )
 
 type UserRepository interface {
@@ -54,6 +54,7 @@ func (r *userRepository) FindBySocialProvider(ctx context.Context, provider mode
 }
 
 func (r *userRepository) Create(ctx context.Context, user *models.User) error {
+	user.ID = primitive.NewObjectID()
 	user.CreatedAt = time.Now().UTC()
 	user.UpdatedAt = user.CreatedAt
 	_, err := r.collection.InsertOne(ctx, user)
