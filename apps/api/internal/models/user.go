@@ -16,27 +16,21 @@ const (
 	AuthProviderLinkedIn AuthProvider = "linkedin"
 )
 
-// SocialAccount represents a social media account linked to a user
-type SocialAccount struct {
-	Provider   AuthProvider `bson:"provider" json:"provider" example:"google"`
-	ProviderId string       `bson:"providerId" json:"providerId" example:"123456789"`
-	Email      string       `bson:"email" json:"email" example:"john@example.com"`
-	Name       string       `bson:"name,omitempty" json:"name,omitempty" example:"John Doe"`
-	AvatarUrl  string       `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty" example:"https://example.com/avatar.jpg"`
-}
-
 // User represents a user in the system
 type User struct {
-	ID             primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	Email          string             `bson:"email" json:"email" example:"john@example.com"`
-	PasswordHash   string             `bson:"passwordHash,omitempty" json:"-"`
-	Name           string             `bson:"name" json:"name" example:"John Doe"`
-	AvatarUrl      string             `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty" example:"https://example.com/avatar.jpg"`
-	SocialAccounts []SocialAccount    `bson:"socialAccounts,omitempty" json:"socialAccounts,omitempty"`
-	EmailVerified  bool               `bson:"emailVerified" json:"emailVerified" example:"true"`
-	CreatedAt      time.Time          `bson:"createdAt" json:"createdAt" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt      time.Time          `bson:"updatedAt" json:"updatedAt" example:"2024-01-01T00:00:00Z"`
-	LastLogin      *time.Time         `bson:"lastLogin,omitempty" json:"lastLogin,omitempty" example:"2024-01-01T00:00:00Z"`
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Email        string             `bson:"email" json:"email" example:"john@example.com"`
+	PasswordHash string             `bson:"passwordHash,omitempty" json:"-"`
+	Name         string             `bson:"name" json:"name" example:"John Doe"`
+	AvatarUrl    string             `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty" example:"https://example.com/avatar.jpg"`
+	Provider     AuthProvider       `bson:"provider" json:"provider" example:"local"`
+	ProviderId   string             `bson:"providerId,omitempty" json:"providerId,omitempty" example:"123456789"`
+	OpenAiApiKey string             `bson:"openAiApiKey,omitempty" json:"openAiApiKey,omitempty"`
+	OpenAiModel  string             `bson:"openAiModel,omitempty" json:"openAiModel,omitempty"`
+	DataSources  []string           `bson:"dataSources,omitempty" json:"dataSources,omitempty"`
+	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt    time.Time          `bson:"updatedAt" json:"updatedAt" example:"2024-01-01T00:00:00Z"`
+	LastLogin    *time.Time         `bson:"lastLogin,omitempty" json:"lastLogin,omitempty" example:"2024-01-01T00:00:00Z"`
 }
 
 // MarshalJSON implementa a interface json.Marshaler para User

@@ -46,7 +46,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*models
 
 func (r *userRepository) FindBySocialProvider(ctx context.Context, provider models.AuthProvider, providerId string) (*models.User, error) {
 	var user models.User
-	err := r.collection.FindOne(ctx, bson.M{"socialAccounts": bson.M{"$elemMatch": bson.M{"provider": provider, "providerId": providerId}}}).Decode(&user)
+	err := r.collection.FindOne(ctx, bson.M{"provider": provider, "providerId": providerId}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}

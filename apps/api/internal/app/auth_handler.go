@@ -2,6 +2,13 @@
 package app
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/postpilot/api/internal/models"
 	"github.com/postpilot/api/internal/services"
@@ -31,7 +38,7 @@ type registerRequest struct {
 // @Produce json
 // @Param input body registerRequest true "User registration info"
 // @Success 201 {object} models.User
-// @Failure 400 {object} fiber.Map
+// @Failure 400 {object} map[string]interface{}
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var req registerRequest
@@ -62,7 +69,7 @@ type loginResponse struct {
 // @Produce json
 // @Param input body loginRequest true "Login info"
 // @Success 200 {object} loginResponse
-// @Failure 400 {object} fiber.Map
+// @Failure 400 {object} map[string]interface{}
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req loginRequest
@@ -92,7 +99,7 @@ type socialLoginRequest struct {
 // @Produce json
 // @Param input body socialLoginRequest true "Social login info"
 // @Success 200 {object} loginResponse
-// @Failure 400 {object} fiber.Map
+// @Failure 400 {object} map[string]interface{}
 // @Router /auth/social [post]
 func (h *AuthHandler) SocialLogin(c *fiber.Ctx) error {
 	var req socialLoginRequest
@@ -121,7 +128,7 @@ type refreshResponse struct {
 // @Produce json
 // @Param input body refreshRequest true "Refresh token info"
 // @Success 200 {object} refreshResponse
-// @Failure 400 {object} fiber.Map
+// @Failure 400 {object} map[string]interface{}
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	var req refreshRequest
@@ -133,4 +140,270 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(fiber.StatusOK).JSON(refreshResponse{Token: token})
+}
+
+type updateProfileRequest struct {
+	OpenAiApiKey string   `json:"openAiApiKey"`
+	OpenAiModel  string   `json:"openAiModel"`
+	DataSources  []string `json:"dataSources"`
+}
+
+// UpdateProfile godoc
+// @Summary Update user profile/configuration
+// @Description Update OpenAI and data sources for the authenticated user
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param input body updateProfileRequest true "Profile update info"
+// @Success 200 {object} models.User
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /me [put]
+func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
+	claims := c.Locals("user").(map[string]interface{})
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user claims"})
+	}
+
+	var req updateProfileRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	user, err := h.AuthService.GetUserByID(c.Context(), userId)
+	if err != nil || user == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	// Atualiza apenas os campos permitidos
+	user.OpenAiApiKey = req.OpenAiApiKey
+	user.OpenAiModel = req.OpenAiModel
+	user.DataSources = req.DataSources
+
+	err = h.AuthService.UpdateUser(c.Context(), user)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(user)
+}
+
+// GetProfile godoc
+// @Summary Get authenticated user profile
+// @Description Returns the full user object for the authenticated user
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} models.User
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /me [get]
+func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
+	claims := c.Locals("user").(map[string]interface{})
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid user claims"})
+	}
+	user, err := h.AuthService.GetUserByID(c.Context(), userId)
+	if err != nil || user == nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+	return c.JSON(user)
+}
+
+// LinkedInAuthURL godoc
+// @Summary Get LinkedIn consent URL
+// @Description Returns the LinkedIn OpenID Connect consent URL for social login
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} map[string]string "{ \"url\": \"https://www.linkedin.com/oauth/v2/authorization?...\" }"
+// @Failure 500 {object} map[string]interface{} "{ \"error\": \"LinkedIn client ID or redirect URI not configured\" }"
+// @Router /auth/linkedin/url [get]
+func (h *AuthHandler) LinkedInAuthURL(c *fiber.Ctx) error {
+	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
+	redirectURI := os.Getenv("LINKEDIN_REDIRECT_URI")
+	if clientID == "" || redirectURI == "" {
+		return c.Status(500).JSON(map[string]interface{}{"error": "LinkedIn client ID or redirect URI not configured"})
+	}
+
+	authURL := fmt.Sprintf(
+		"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=%s&redirect_uri=%s&scope=openid%%20profile%%20email",
+		url.QueryEscape(clientID),
+		url.QueryEscape(redirectURI),
+	)
+
+	return c.JSON(map[string]string{"url": authURL})
+}
+
+type linkedinTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"`
+}
+
+type linkedinEmailResponse struct {
+	Elements []struct {
+		Handle     string `json:"handle~"`
+		HandleData struct {
+			EmailAddress string `json:"emailAddress"`
+		} `json:"handle~"`
+	} `json:"elements"`
+}
+
+type linkedinProfileResponse struct {
+	ID        string `json:"id"`
+	FirstName struct {
+		Localized struct {
+			EnUS string `json:"en_US"`
+		} `json:"localized"`
+	} `json:"firstName"`
+	LastName struct {
+		Localized struct {
+			EnUS string `json:"en_US"`
+		} `json:"localized"`
+	} `json:"lastName"`
+	ProfilePicture struct {
+		DisplayImage struct {
+			Elements []struct {
+				Identifiers []struct {
+					Identifier string `json:"identifier"`
+				} `json:"identifiers"`
+			} `json:"elements"`
+		} `json:"displayImage~"`
+	} `json:"profilePicture"`
+}
+
+// LinkedInCallback godoc
+// @Summary LinkedIn OpenID Connect callback
+// @Description Handles LinkedIn OpenID Connect callback, authenticates or creates user, returns JWT and user object
+// @Tags Auth
+// @Produce json
+// @Param code query string true "Authorization code from LinkedIn"
+// @Success 200 {object} map[string]interface{} "{ \"user\": { ... }, \"token\": \"...\" }"
+// @Failure 400 {object} map[string]interface{} "{ \"error\": \"Missing code from LinkedIn\" }"
+// @Failure 500 {object} map[string]interface{} "{ \"error\": \"Failed to get access token from LinkedIn\" }"
+// @Router /auth/linkedin/callback [get]
+func (h *AuthHandler) LinkedInCallback(c *fiber.Ctx) error {
+	code := c.Query("code")
+	if code == "" {
+		return c.Status(400).JSON(map[string]interface{}{"error": "Missing code from LinkedIn"})
+	}
+
+	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
+	clientSecret := os.Getenv("LINKEDIN_CLIENT_SECRET")
+	redirectURI := os.Getenv("LINKEDIN_REDIRECT_URI")
+
+	// Troca o code por access_token
+	token, err := exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to get access token from LinkedIn", "details": err.Error()})
+	}
+
+	// Busca dados do usuário via OpenID Connect
+	userInfo, err := fetchLinkedInUserInfo(token)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to fetch LinkedIn userinfo", "details": err.Error()})
+	}
+
+	// Autentica/cria usuário
+	user, jwt, err := h.AuthService.LoginWithSocial(
+		c.Context(),
+		models.AuthProviderLinkedIn,
+		userInfo.Sub,
+		userInfo.Email,
+		userInfo.Name,
+		userInfo.Picture,
+	)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to login or register user", "details": err.Error()})
+	}
+
+	return c.JSON(map[string]interface{}{"user": user, "token": jwt})
+}
+
+type linkedinUserInfo struct {
+	Sub     string `json:"sub"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Picture string `json:"picture"`
+}
+
+func fetchLinkedInUserInfo(token string) (*linkedinUserInfo, error) {
+	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/userinfo", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var userInfo linkedinUserInfo
+	if err := json.Unmarshal(body, &userInfo); err != nil {
+		return nil, err
+	}
+	return &userInfo, nil
+}
+
+func exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI string) (string, error) {
+	data := url.Values{}
+	data.Set("grant_type", "authorization_code")
+	data.Set("code", code)
+	data.Set("redirect_uri", redirectURI)
+	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
+
+	resp, err := http.PostForm("https://www.linkedin.com/oauth/v2/accessToken", data)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var tokenResp linkedinTokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return "", err
+	}
+	return tokenResp.AccessToken, nil
+}
+
+func fetchLinkedInProfile(token string) (*linkedinProfileResponse, error) {
+	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var profile linkedinProfileResponse
+	if err := json.Unmarshal(body, &profile); err != nil {
+		return nil, err
+	}
+	return &profile, nil
+}
+
+func fetchLinkedInEmail(token string) (string, error) {
+	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var emailResp linkedinEmailResponse
+	if err := json.Unmarshal(body, &emailResp); err != nil {
+		return "", err
+	}
+	if len(emailResp.Elements) > 0 {
+		return emailResp.Elements[0].HandleData.EmailAddress, nil
+	}
+	return "", fmt.Errorf("email not found")
 }

@@ -63,8 +63,16 @@ definitions:
         example: "123456789"
         type: string
     type: object
-  fiber.Map:
-    additionalProperties: true
+  app.updateProfileRequest:
+    properties:
+      dataSources:
+        items:
+          type: string
+        type: array
+      openAiApiKey:
+        type: string
+      openAiModel:
+        type: string
     type: object
   models.AuthProvider:
     enum:
@@ -76,25 +84,6 @@ definitions:
     - AuthProviderLocal
     - AuthProviderGoogle
     - AuthProviderLinkedIn
-  models.SocialAccount:
-    properties:
-      avatarUrl:
-        example: https://example.com/avatar.jpg
-        type: string
-      email:
-        example: john@example.com
-        type: string
-      name:
-        example: John Doe
-        type: string
-      provider:
-        allOf:
-        - $ref: '#/definitions/models.AuthProvider'
-        example: google
-      providerId:
-        example: "123456789"
-        type: string
-    type: object
   models.User:
     properties:
       avatarUrl:
@@ -103,14 +92,14 @@ definitions:
       createdAt:
         example: "2024-01-01T00:00:00Z"
         type: string
+      dataSources:
+        items:
+          type: string
+        type: array
       email:
         example: john@example.com
         type: string
-      emailVerified:
-        example: true
-        type: boolean
       id:
-        example: 507f1f77bcf86cd799439011
         type: string
       lastLogin:
         example: "2024-01-01T00:00:00Z"
@@ -118,10 +107,17 @@ definitions:
       name:
         example: John Doe
         type: string
-      socialAccounts:
-        items:
-          $ref: '#/definitions/models.SocialAccount'
-        type: array
+      openAiApiKey:
+        type: string
+      openAiModel:
+        type: string
+      provider:
+        allOf:
+        - $ref: '#/definitions/models.AuthProvider'
+        example: local
+      providerId:
+        example: "123456789"
+        type: string
       updatedAt:
         example: "2024-01-01T00:00:00Z"
         type: string
@@ -133,6 +129,60 @@ info:
   title: The Post Pilot API
   version: "1.0"
 paths:
+  /auth/linkedin/callback:
+    get:
+      description: Handles LinkedIn OpenID Connect callback, authenticates or creates
+        user, returns JWT and user object
+      parameters:
+      - description: Authorization code from LinkedIn
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{ \"user\": { ... }, \"token\": \"...\" }'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: '{ \"error\": \"Missing code from LinkedIn\" }'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: '{ \"error\": \"Failed to get access token from LinkedIn\"
+            }'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: LinkedIn OpenID Connect callback
+      tags:
+      - Auth
+  /auth/linkedin/url:
+    get:
+      description: Returns the LinkedIn OpenID Connect consent URL for social login
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{ \"url\": \"https://www.linkedin.com/oauth/v2/authorization?...\"
+            }'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: '{ \"error\": \"LinkedIn client ID or redirect URI not configured\"
+            }'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get LinkedIn consent URL
+      tags:
+      - Auth
   /auth/login:
     post:
       consumes:
@@ -155,7 +205,8 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/fiber.Map'
+            additionalProperties: true
+            type: object
       summary: Login with email and password
       tags:
       - Auth
@@ -181,7 +232,8 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/fiber.Map'
+            additionalProperties: true
+            type: object
       summary: Refresh JWT using refresh token
       tags:
       - Auth
@@ -207,7 +259,8 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/fiber.Map'
+            additionalProperties: true
+            type: object
       summary: Register a new user
       tags:
       - Auth
@@ -233,8 +286,73 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/fiber.Map'
+            additionalProperties: true
+            type: object
       summary: Login or register with social provider
+      tags:
+      - Auth
+  /me:
+    get:
+      description: Returns the full user object for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get authenticated user profile
+      tags:
+      - Auth
+    put:
+      consumes:
+      - application/json
+      description: Update OpenAI and data sources for the authenticated user
+      parameters:
+      - description: Profile update info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/app.updateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update user profile/configuration
       tags:
       - Auth
 schemes:

@@ -24,15 +24,11 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler) {
 	auth.Post("/login", authHandler.Login)
 	auth.Post("/social", authHandler.SocialLogin)
 	auth.Post("/refresh", authHandler.RefreshToken)
+	auth.Get("/linkedin/url", authHandler.LinkedInAuthURL)
+	auth.Get("/linkedin/callback", authHandler.LinkedInCallback)
 
 	// Rotas protegidas
 	protected := app.Group("/the-post-pilot/v1", middleware.JWTAuth(os.Getenv("JWT_SECRET")))
-
-	// Exemplo de rota protegida
-	protected.Get("/me", func(c *fiber.Ctx) error {
-		user := c.Locals("user")
-		return c.JSON(fiber.Map{
-			"user": user,
-		})
-	})
+	protected.Get("/me", authHandler.GetProfile)
+	protected.Put("/me", authHandler.UpdateProfile)
 }

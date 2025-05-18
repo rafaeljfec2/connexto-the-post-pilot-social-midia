@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -64,10 +65,8 @@ func GetDatabase() (*mongo.Database, error) {
 	}
 	dbName := os.Getenv("MONGO_DB")
 	if dbName == "" {
-		log.Printf("MONGO_DB não encontrado, usando banco padrão: %s", defaultDBName)
-		dbName = defaultDBName
-	} else {
-		log.Printf("Usando banco de dados: %s", dbName)
+		return nil, fmt.Errorf("MONGO_DB environment variable is required but not set")
 	}
+	log.Printf("Usando banco de dados: %s", dbName)
 	return client.Database(dbName), nil
 }

@@ -23,6 +23,9 @@ type AuthService interface {
 	GenerateRefreshToken(user *models.User) (string, error)
 	ValidateRefreshToken(tokenStr string) (string, error)
 	RefreshJWT(refreshToken string) (string, error)
+	// Novos métodos
+	GetUserByID(ctx context.Context, id string) (*models.User, error)
+	UpdateUser(ctx context.Context, user *models.User) error
 }
 
 type authService struct {
@@ -62,10 +65,11 @@ func (s *authService) Register(ctx context.Context, name, email, password string
 		return nil, err
 	}
 	user := &models.User{
-		Name:          name,
-		Email:         email,
-		PasswordHash:  string(hash),
-		EmailVerified: false,
+		Name:         name,
+		Email:        email,
+		PasswordHash: string(hash),
+		Provider:     models.AuthProviderLocal,
+		ProviderId:   "",
 	}
 	err = s.repo.Create(ctx, user)
 	if err != nil {
@@ -110,19 +114,12 @@ func (s *authService) LoginWithSocial(ctx context.Context, provider models.AuthP
 	}
 	if user == nil {
 		// Novo usuário
-		social := models.SocialAccount{
+		user = &models.User{
+			Name:       name,
+			Email:      email,
+			AvatarUrl:  avatarUrl,
 			Provider:   provider,
 			ProviderId: providerId,
-			Email:      email,
-			Name:       name,
-			AvatarUrl:  avatarUrl,
-		}
-		user = &models.User{
-			Name:           name,
-			Email:          email,
-			AvatarUrl:      avatarUrl,
-			EmailVerified:  true,
-			SocialAccounts: []models.SocialAccount{social},
 		}
 		err = s.repo.Create(ctx, user)
 		if err != nil {
@@ -132,7 +129,8 @@ func (s *authService) LoginWithSocial(ctx context.Context, provider models.AuthP
 		// Atualiza dados básicos se necessário
 		user.Name = name
 		user.AvatarUrl = avatarUrl
-		user.EmailVerified = true
+		user.Provider = provider
+		user.ProviderId = providerId
 		err = s.repo.Update(ctx, user)
 		if err != nil {
 			return nil, "", err
@@ -187,4 +185,12 @@ func (s *authService) RefreshJWT(refreshToken string) (string, error) {
 		return "", errors.New("user not found")
 	}
 	return s.GenerateJWT(user)
+}
+
+func (s *authService) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	return s.repo.FindByID(ctx, id)
+}
+
+func (s *authService) UpdateUser(ctx context.Context, user *models.User) error {
+	return s.repo.Update(ctx, user)
 }

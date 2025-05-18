@@ -15,6 +15,80 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/linkedin/callback": {
+            "get": {
+                "description": "Handles LinkedIn OpenID Connect callback, authenticates or creates user, returns JWT and user object",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "LinkedIn OpenID Connect callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization code from LinkedIn",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{ \\\"user\\\": { ... }, \\\"token\\\": \\\"...\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "{ \\\"error\\\": \\\"Missing code from LinkedIn\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "{ \\\"error\\\": \\\"Failed to get access token from LinkedIn\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/linkedin/url": {
+            "get": {
+                "description": "Returns the LinkedIn OpenID Connect consent URL for social login",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get LinkedIn consent URL",
+                "responses": {
+                    "200": {
+                        "description": "{ \\\"url\\\": \\\"https://www.linkedin.com/oauth/v2/authorization?...\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "{ \\\"error\\\": \\\"LinkedIn client ID or redirect URI not configured\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Authenticate user with email and password",
@@ -49,7 +123,8 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/fiber.Map"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -89,7 +164,8 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/fiber.Map"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -129,7 +205,8 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/fiber.Map"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -169,7 +246,102 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/fiber.Map"
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/me": {
+            "get": {
+                "description": "Returns the full user object for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get authenticated user profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update OpenAI and data sources for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Update user profile/configuration",
+                "parameters": [
+                    {
+                        "description": "Profile update info",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/app.updateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -270,9 +442,22 @@ const docTemplate = `{
                 }
             }
         },
-        "fiber.Map": {
+        "app.updateProfileRequest": {
             "type": "object",
-            "additionalProperties": true
+            "properties": {
+                "dataSources": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "openAiApiKey": {
+                    "type": "string"
+                },
+                "openAiModel": {
+                    "type": "string"
+                }
+            }
         },
         "models.AuthProvider": {
             "type": "string",
@@ -287,35 +472,6 @@ const docTemplate = `{
                 "AuthProviderLinkedIn"
             ]
         },
-        "models.SocialAccount": {
-            "type": "object",
-            "properties": {
-                "avatarUrl": {
-                    "type": "string",
-                    "example": "https://example.com/avatar.jpg"
-                },
-                "email": {
-                    "type": "string",
-                    "example": "john@example.com"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "John Doe"
-                },
-                "provider": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.AuthProvider"
-                        }
-                    ],
-                    "example": "google"
-                },
-                "providerId": {
-                    "type": "string",
-                    "example": "123456789"
-                }
-            }
-        },
         "models.User": {
             "type": "object",
             "properties": {
@@ -327,17 +483,18 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
                 },
+                "dataSources": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "email": {
                     "type": "string",
                     "example": "john@example.com"
                 },
-                "emailVerified": {
-                    "type": "boolean",
-                    "example": true
-                },
                 "id": {
-                    "type": "string",
-                    "example": "507f1f77bcf86cd799439011"
+                    "type": "string"
                 },
                 "lastLogin": {
                     "type": "string",
@@ -347,11 +504,23 @@ const docTemplate = `{
                     "type": "string",
                     "example": "John Doe"
                 },
-                "socialAccounts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.SocialAccount"
-                    }
+                "openAiApiKey": {
+                    "type": "string"
+                },
+                "openAiModel": {
+                    "type": "string"
+                },
+                "provider": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.AuthProvider"
+                        }
+                    ],
+                    "example": "local"
+                },
+                "providerId": {
+                    "type": "string",
+                    "example": "123456789"
                 },
                 "updatedAt": {
                     "type": "string",
