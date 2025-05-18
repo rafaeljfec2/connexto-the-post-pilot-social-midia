@@ -4,12 +4,9 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/postpilot/api/docs" // swagger docs (gerado pelo swag)
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
 
 	appPkg "github.com/postpilot/api/internal/app"
@@ -32,7 +29,7 @@ func main() {
 	_ = godotenv.Load() // Carrega variáveis do .env
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "8081"
 	}
 
 	app := fiber.New(fiber.Config{
@@ -42,9 +39,6 @@ func main() {
 	// Middlewares
 	app.Use(logger.New())
 	app.Use(cors.New())
-
-	// Swagger docs
-	app.Get("/swagger/*", swagger.New())
 
 	// Inicialização dos repositórios e serviços
 	repo, err := repositories.NewUserRepository()
