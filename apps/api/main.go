@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 
 	appPkg "github.com/postpilot/api/internal/app"
+	"github.com/postpilot/api/internal/middleware"
 	"github.com/postpilot/api/internal/repositories"
 	"github.com/postpilot/api/internal/services"
 )
@@ -36,9 +37,10 @@ func main() {
 		AppName: "Post Pilot API",
 	})
 
-	// Middlewares
+	// Middlewares globais
 	app.Use(logger.New())
 	app.Use(cors.New())
+	app.Use(middleware.RateLimit())
 
 	// Inicialização dos repositórios e serviços
 	repo, err := repositories.NewUserRepository()

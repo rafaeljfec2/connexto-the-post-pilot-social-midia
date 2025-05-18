@@ -1,0 +1,67 @@
+package middleware
+
+import (
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// JWTAuth é um middleware que valida o token JWT
+func JWTAuth(secret string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Obtém o token do header Authorization
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Authorization header is required",
+			})
+		}
+
+		// Verifica se o header começa com "Bearer "
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid authorization header format",
+			})
+		}
+
+		// Extrai o token
+		tokenString := parts[1]
+
+		// Valida o token
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Verifica o método de assinatura
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid signing method")
+			}
+			return []byte(secret), nil
+		})
+
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid or expired token",
+			})
+		}
+
+		// Verifica se o token é válido
+		if !token.Valid {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid token",
+			})
+		}
+
+		// Extrai as claims do token
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid token claims",
+			})
+		}
+
+		// Adiciona as claims ao contexto para uso posterior
+		c.Locals("user", claims)
+
+		return c.Next()
+	}
+}
