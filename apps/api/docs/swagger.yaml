@@ -129,6 +129,59 @@ info:
   title: The Post Pilot API
   version: "1.0"
 paths:
+  /auth/google/callback:
+    get:
+      description: Handles Google OpenID Connect callback, authenticates or creates
+        user, returns JWT and user object
+      parameters:
+      - description: Authorization code from Google
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{ \"user\": { ... }, \"token\": \"...\" }'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: '{ \"error\": \"Missing code from Google\" }'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: '{ \"error\": \"Failed to get access token from Google\" }'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Google OpenID Connect callback
+      tags:
+      - Auth
+  /auth/google/url:
+    get:
+      description: Returns the Google OpenID Connect consent URL for social login
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{ \"url\": \"https://accounts.google.com/o/oauth2/v2/auth?...\"
+            }'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: '{ \"error\": \"Google client ID or redirect URI not configured\"
+            }'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Google consent URL
+      tags:
+      - Auth
   /auth/linkedin/callback:
     get:
       description: Handles LinkedIn OpenID Connect callback, authenticates or creates

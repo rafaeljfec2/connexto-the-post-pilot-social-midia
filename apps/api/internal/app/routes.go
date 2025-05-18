@@ -26,6 +26,8 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler) {
 	auth.Post("/refresh", authHandler.RefreshToken)
 	auth.Get("/linkedin/url", authHandler.LinkedInAuthURL)
 	auth.Get("/linkedin/callback", authHandler.LinkedInCallback)
+	auth.Get("/google/url", authHandler.GoogleAuthURL)
+	auth.Get("/google/callback", authHandler.GoogleCallback)
 
 	// Rotas protegidas
 	protected := app.Group("/the-post-pilot/v1", middleware.JWTAuth(os.Getenv("JWT_SECRET")))

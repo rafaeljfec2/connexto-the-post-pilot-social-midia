@@ -15,6 +15,80 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/google/callback": {
+            "get": {
+                "description": "Handles Google OpenID Connect callback, authenticates or creates user, returns JWT and user object",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Google OpenID Connect callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization code from Google",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{ \\\"user\\\": { ... }, \\\"token\\\": \\\"...\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "{ \\\"error\\\": \\\"Missing code from Google\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "{ \\\"error\\\": \\\"Failed to get access token from Google\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/google/url": {
+            "get": {
+                "description": "Returns the Google OpenID Connect consent URL for social login",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get Google consent URL",
+                "responses": {
+                    "200": {
+                        "description": "{ \\\"url\\\": \\\"https://accounts.google.com/o/oauth2/v2/auth?...\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "{ \\\"error\\\": \\\"Google client ID or redirect URI not configured\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/auth/linkedin/callback": {
             "get": {
                 "description": "Handles LinkedIn OpenID Connect callback, authenticates or creates user, returns JWT and user object",

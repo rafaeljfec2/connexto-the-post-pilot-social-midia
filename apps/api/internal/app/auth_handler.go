@@ -407,3 +407,124 @@ func fetchLinkedInEmail(token string) (string, error) {
 	}
 	return "", fmt.Errorf("email not found")
 }
+
+// GoogleAuthURL godoc
+// @Summary Get Google consent URL
+// @Description Returns the Google OpenID Connect consent URL for social login
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} map[string]string "{ \"url\": \"https://accounts.google.com/o/oauth2/v2/auth?...\" }"
+// @Failure 500 {object} map[string]interface{} "{ \"error\": \"Google client ID or redirect URI not configured\" }"
+// @Router /auth/google/url [get]
+func (h *AuthHandler) GoogleAuthURL(c *fiber.Ctx) error {
+	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+	redirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
+	if clientID == "" || redirectURI == "" {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Google client ID or redirect URI not configured"})
+	}
+
+	authURL := fmt.Sprintf(
+		"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%s&redirect_uri=%s&scope=openid%%20email%%20profile&access_type=offline",
+		url.QueryEscape(clientID),
+		url.QueryEscape(redirectURI),
+	)
+
+	return c.JSON(map[string]string{"url": authURL})
+}
+
+// GoogleCallback godoc
+// @Summary Google OpenID Connect callback
+// @Description Handles Google OpenID Connect callback, authenticates or creates user, returns JWT and user object
+// @Tags Auth
+// @Produce json
+// @Param code query string true "Authorization code from Google"
+// @Success 200 {object} map[string]interface{} "{ \"user\": { ... }, \"token\": \"...\" }"
+// @Failure 400 {object} map[string]interface{} "{ \"error\": \"Missing code from Google\" }"
+// @Failure 500 {object} map[string]interface{} "{ \"error\": \"Failed to get access token from Google\" }"
+// @Router /auth/google/callback [get]
+func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
+	code := c.Query("code")
+	if code == "" {
+		return c.Status(400).JSON(map[string]interface{}{"error": "Missing code from Google"})
+	}
+
+	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	redirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
+
+	// Troca o code por access_token
+	token, err := exchangeGoogleCodeForToken(code, clientID, clientSecret, redirectURI)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to get access token from Google", "details": err.Error()})
+	}
+
+	// Busca dados do usuário via OpenID Connect
+	userInfo, err := fetchGoogleUserInfo(token)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to fetch Google userinfo", "details": err.Error()})
+	}
+
+	// Autentica/cria usuário
+	user, jwt, err := h.AuthService.LoginWithSocial(
+		c.Context(),
+		models.AuthProviderGoogle,
+		userInfo.Sub,
+		userInfo.Email,
+		userInfo.Name,
+		userInfo.Picture,
+	)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to login or register user", "details": err.Error()})
+	}
+
+	return c.JSON(map[string]interface{}{"user": user, "token": jwt})
+}
+
+type googleUserInfo struct {
+	Sub     string `json:"sub"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Picture string `json:"picture"`
+}
+
+func exchangeGoogleCodeForToken(code, clientID, clientSecret, redirectURI string) (string, error) {
+	data := url.Values{}
+	data.Set("grant_type", "authorization_code")
+	data.Set("code", code)
+	data.Set("redirect_uri", redirectURI)
+	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
+
+	resp, err := http.PostForm("https://oauth2.googleapis.com/token", data)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var tokenResp struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return "", err
+	}
+	return tokenResp.AccessToken, nil
+}
+
+func fetchGoogleUserInfo(token string) (*googleUserInfo, error) {
+	req, _ := http.NewRequest("GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var userInfo googleUserInfo
+	if err := json.Unmarshal(body, &userInfo); err != nil {
+		return nil, err
+	}
+	return &userInfo, nil
+}
