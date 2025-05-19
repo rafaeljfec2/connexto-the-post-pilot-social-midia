@@ -1,19 +1,29 @@
 # Post Pilot
 
+[![Go](<https://img.shields.io/badge/Backend-Go%20(Fiber)-00ADD8?logo=go&logoColor=white>)](https://go.dev/)
+[![React](https://img.shields.io/badge/Frontend-React%2018-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Build-Vite-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Estilo-Tailwind%20CSS-38BDF8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![MongoDB](https://img.shields.io/badge/DB-MongoDB-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![OpenAI](https://img.shields.io/badge/IA-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com/)
+
 Aplicativo de gerenciamento e automação de posts e interações em redes sociais com inteligência artificial.
 
-## MVP — Funcionalidades e Progresso
+---
+
+## 🚀 MVP — Funcionalidades e Progresso
 
 ### Funcionalidades do MVP
 
-- Autenticação via LinkedIn (OpenID Connect)
-- Autenticação via Google (OpenID Connect)
-- Salvamento de tokens e dados do usuário (incluindo OpenAI)
-- Estrutura para fontes técnicas (RSS, dev.to, Medium, Hacker News)
-- Geração de texto com OpenAI (em breve)
-- Exibição de sugestões no painel com botão "Aprovar" (em breve)
-- Publicação no LinkedIn com 1 click (em breve)
-- Histórico de posts (em breve)
+- **Autenticação via LinkedIn (OpenID Connect)**
+- **Autenticação via Google (OpenID Connect)**
+- **Salvamento de tokens e dados do usuário** (incluindo OpenAI)
+- **Estrutura para fontes técnicas** (RSS, dev.to, Medium, Hacker News)
+- **Geração de texto com OpenAI** _(em breve)_
+- **Exibição de sugestões no painel com botão "Aprovar"** _(em breve)_
+- **Publicação no LinkedIn com 1 click** _(em breve)_
+- **Histórico de posts** _(em breve)_
 
 ### Estágio Atual
 
@@ -30,9 +40,9 @@ Aplicativo de gerenciamento e automação de posts e interações em redes socia
 
 ---
 
-## Estrutura do Projeto
+## 📁 Estrutura do Projeto
 
-```
+```text
 .
 ├── apps/
 │   ├── web/          # Frontend React + Vite
@@ -42,13 +52,14 @@ Aplicativo de gerenciamento e automação de posts e interações em redes socia
 └── pnpm-workspace.yaml
 ```
 
-## Pré-requisitos
+## ⚙️ Pré-requisitos
 
 - Node.js >= 18
 - pnpm >= 8
 - Go >= 1.21
+- MongoDB (local ou Atlas)
 
-## Instalação
+## 🛠️ Instalação
 
 ```bash
 # Instalar dependências
@@ -59,66 +70,44 @@ cd apps/api
 go mod download
 ```
 
-## Desenvolvimento
+## 👨‍💻 Desenvolvimento
 
 ### Frontend (Web)
 
 ```bash
-# Iniciar servidor de desenvolvimento
-pnpm dev:web
-
-# Build
-pnpm build:web
-
-# Testes
-pnpm test:web
-
-# Lint
-pnpm lint:web
+pnpm dev:web        # Iniciar servidor de desenvolvimento
+pnpm build:web      # Build do frontend
+pnpm test:web       # Testes
+pnpm lint:web       # Lint
 ```
 
 ### Backend (API)
 
 ```bash
-# Iniciar servidor de desenvolvimento
-pnpm dev:api
-
-# Build
-pnpm build:api
-
-# Testes
-pnpm test:api
-
-# Lint
-pnpm lint:api
+pnpm dev:api        # Iniciar servidor de desenvolvimento
+pnpm build:api      # Build do backend
+pnpm test:api       # Testes
+pnpm lint:api       # Lint
 ```
 
-## Scripts Disponíveis
+## 📜 Scripts Disponíveis
 
-- `pnpm dev:web` - Inicia o frontend em modo de desenvolvimento
-- `pnpm dev:api` - Inicia o backend em modo de desenvolvimento
-- `pnpm build:web` - Build do frontend
-- `pnpm build:api` - Build do backend
-- `pnpm test:web` - Roda testes do frontend
-- `pnpm test:api` - Roda testes do backend
-- `pnpm lint:web` - Roda lint no frontend
-- `pnpm lint:api` - Roda lint no backend
+- `pnpm dev:web` — Inicia o frontend em modo de desenvolvimento
+- `pnpm dev:api` — Inicia o backend em modo de desenvolvimento
+- `pnpm build:web` — Build do frontend
+- `pnpm build:api` — Build do backend
+- `pnpm test:web` — Roda testes do frontend
+- `pnpm test:api` — Roda testes do backend
+- `pnpm lint:web` — Roda lint no frontend
+- `pnpm lint:api` — Roda lint no backend
+- `pnpm update-swagger` — Atualiza a documentação Swagger da API
 
-## Tecnologias
+## 🧰 Tecnologias
 
-### Frontend
+- **Frontend:** React 18, Vite, TypeScript, Tailwind CSS
+- **Backend:** Go (Fiber), MongoDB, OpenAI API
+- **Infra:** pnpm, monorepo, scripts automatizados
 
-- React
-- Vite
-- TypeScript
-- Tailwind CSS
-
-### Backend
-
-- Go
-- Echo/Fiber
-- TypeScript (para definições de tipos compartilhados)
-
-## Licença
+## 📄 Licença
 
 MIT
