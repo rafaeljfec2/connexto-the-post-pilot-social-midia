@@ -2,6 +2,34 @@
 
 Aplicativo de gerenciamento e automação de posts e interações em redes sociais com inteligência artificial.
 
+## MVP — Funcionalidades e Progresso
+
+### Funcionalidades do MVP
+
+- Autenticação via LinkedIn (OpenID Connect)
+- Autenticação via Google (OpenID Connect)
+- Salvamento de tokens e dados do usuário (incluindo OpenAI)
+- Estrutura para fontes técnicas (RSS, dev.to, Medium, Hacker News)
+- Geração de texto com OpenAI (em breve)
+- Exibição de sugestões no painel com botão "Aprovar" (em breve)
+- Publicação no LinkedIn com 1 click (em breve)
+- Histórico de posts (em breve)
+
+### Estágio Atual
+
+| Funcionalidade                            | Status      |
+| ----------------------------------------- | ----------- |
+| Autenticação via LinkedIn                 | ✅ Pronto   |
+| Autenticação via Google                   | ✅ Pronto   |
+| Salvar tokens e dados do usuário          | ✅ Pronto   |
+| Buscar tema de fontes técnicas (RSS/APIs) | ⬜ Pendente |
+| Gerar texto com OpenAI                    | ⬜ Pendente |
+| Exibir no painel (botão "Aprovar")        | ⬜ Pendente |
+| Publicar no LinkedIn com click            | ⬜ Pendente |
+| Histórico de posts                        | ⬜ Pendente |
+
+---
+
 ## Estrutura do Projeto
 
 ```
