@@ -29,7 +29,7 @@ func NewArticleHandler(articleService services.ArticleService, authService servi
 // @Param from query string false "Published after (YYYY-MM-DD)"
 // @Param to query string false "Published before (YYYY-MM-DD)"
 // @Param tags query string false "Comma-separated tags"
-// @Param limit query int false "Max articles (default 6, max 10)"
+// @Param limit query int false "Max articles (default 6, max 100)"
 // @Success 200 {array} services.Article "Exemplo de resposta: [{\"title\":\"Go 1.22 Released\",\"url\":\"https://dev.to/...\",\"source\":\"dev.to\",\"publishedAt\":\"2024-05-01T12:00:00Z\",\"summary\":\"Resumo...\",\"tags\":[\"go\",\"release\"]}]"
 // @Failure 401 {object} map[string]interface{} "{ \"error\": \"Invalid user claims\" }"
 // @Failure 500 {object} map[string]interface{} "{ \"error\": \"Internal server error\" }"
@@ -72,7 +72,7 @@ func (h *ArticleHandler) GetSuggestions(c *fiber.Ctx) error {
 
 	limit := 6
 	if limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 10 {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
 			limit = l
 		}
 	}

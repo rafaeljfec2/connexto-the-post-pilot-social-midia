@@ -57,7 +57,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Max articles (default 6, max 10)",
+                        "description": "Max articles (default 6, max 100)",
                         "name": "limit",
                         "in": "query"
                     }

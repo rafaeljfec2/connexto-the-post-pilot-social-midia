@@ -37,12 +37,35 @@ func (s *articleService) FetchSuggestions(ctx context.Context, user *models.User
 }
 
 func (s *articleService) fetchFromAllSources(ctx context.Context, user *models.User, limit int) []Article {
-	var allArticles []Article
-	for _, ds := range user.DataSources {
-		articles := s.fetchFromSource(ctx, ds, limit)
-		allArticles = append(allArticles, articles...)
+	numSources := len(user.DataSources)
+	if numSources == 0 {
+		return nil
 	}
-	return allArticles
+	// Limite por fonte (pelo menos 1)
+	perSource := (limit + numSources - 1) / numSources
+	// Busca os artigos de cada fonte
+	articlesBySource := make([][]Article, numSources)
+	for i, ds := range user.DataSources {
+		articlesBySource[i] = s.fetchFromSource(ctx, ds, perSource)
+	}
+	// Intercala os artigos (round-robin)
+	var diversified []Article
+	for i := 0; len(diversified) < limit; i++ {
+		added := false
+		for _, sourceArticles := range articlesBySource {
+			if i < len(sourceArticles) {
+				diversified = append(diversified, sourceArticles[i])
+				if len(diversified) >= limit {
+					break
+				}
+				added = true
+			}
+		}
+		if !added {
+			break // Nenhum artigo novo adicionado, pode sair
+		}
+	}
+	return diversified
 }
 
 func (s *articleService) fetchFromSource(ctx context.Context, ds models.DataSource, limit int) []Article {
