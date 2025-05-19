@@ -11,8 +11,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/models"
 	"github.com/postpilot/api/internal/services"
+	"go.uber.org/zap"
 )
 
 const bearerPrefix = "Bearer "
@@ -46,12 +48,15 @@ type registerRequest struct {
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var req registerRequest
 	if err := c.BodyParser(&req); err != nil {
+		log.Logger.Warn("Invalid register payload", zap.Error(err), zap.String("endpoint", "/auth/register"))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	user, err := h.AuthService.Register(c.Context(), req.Name, req.Email, req.Password)
 	if err != nil {
+		log.Logger.Warn("Register failed", zap.Error(err), zap.String("email", req.Email), zap.String("endpoint", "/auth/register"))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
+	log.Logger.Info("User registered", zap.String("userId", user.ID.Hex()), zap.String("email", user.Email), zap.String("endpoint", "/auth/register"))
 	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
@@ -77,12 +82,15 @@ type loginResponse struct {
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req loginRequest
 	if err := c.BodyParser(&req); err != nil {
+		log.Logger.Warn("Invalid login payload", zap.Error(err), zap.String("endpoint", "/auth/login"))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	user, token, err := h.AuthService.Login(c.Context(), req.Email, req.Password)
 	if err != nil {
+		log.Logger.Warn("Login failed", zap.Error(err), zap.String("email", req.Email), zap.String("endpoint", "/auth/login"))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
+	log.Logger.Info("User login success", zap.String("userId", user.ID.Hex()), zap.String("email", user.Email), zap.String("endpoint", "/auth/login"))
 	return c.Status(fiber.StatusOK).JSON(loginResponse{User: user, Token: token})
 }
 
@@ -169,29 +177,33 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 	claims := c.Locals("user").(jwt.MapClaims)
 	userId, ok := claims["sub"].(string)
 	if !ok {
+		log.Logger.Warn("Invalid user claims on update profile", zap.String("endpoint", "/me"))
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user claims"})
 	}
 
 	var req updateProfileRequest
 	if err := c.BodyParser(&req); err != nil {
+		log.Logger.Warn("Invalid update profile payload", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/me"))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	user, err := h.AuthService.GetUserByID(c.Context(), userId)
 	if err != nil || user == nil {
+		log.Logger.Warn("User not found on update profile", zap.String("userId", userId), zap.String("endpoint", "/me"))
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
 	}
 
-	// Atualiza apenas os campos permitidos
 	user.OpenAiApiKey = req.OpenAiApiKey
 	user.OpenAiModel = req.OpenAiModel
 	user.DataSources = req.DataSources
 
 	err = h.AuthService.UpdateUser(c.Context(), user)
 	if err != nil {
+		log.Logger.Error("Failed to update user profile", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/me"))
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	log.Logger.Info("User profile updated", zap.String("userId", userId), zap.String("endpoint", "/me"))
 	return c.Status(fiber.StatusOK).JSON(user)
 }
 
