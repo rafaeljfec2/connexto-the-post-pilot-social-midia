@@ -8,6 +8,10 @@
 [![MongoDB](https://img.shields.io/badge/DB-MongoDB-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![OpenAI](https://img.shields.io/badge/IA-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com/)
 
+> **O Post Pilot é uma plataforma inteligente para automação, geração e publicação de conteúdos em redes sociais, focada em profissionais e empresas de tecnologia.**
+>
+> O objetivo é simplificar o fluxo de criação de posts técnicos, integrando fontes de referência (RSS, dev.to, Medium, etc.), geração de texto com IA (OpenAI), curadoria e publicação automatizada no LinkedIn, com histórico e gestão centralizada.
+
 Aplicativo de gerenciamento e automação de posts e interações em redes sociais com inteligência artificial.
 
 ---
