@@ -84,6 +84,27 @@ definitions:
     - AuthProviderLocal
     - AuthProviderGoogle
     - AuthProviderLinkedIn
+  models.DataSource:
+    properties:
+      tags:
+        items:
+          type: string
+        type: array
+      type:
+        $ref: '#/definitions/models.DataSourceType'
+      url:
+        type: string
+    type: object
+  models.DataSourceType:
+    enum:
+    - rss
+    - devto
+    - hackernews
+    type: string
+    x-enum-varnames:
+    - DataSourceRSS
+    - DataSourceDevTo
+    - DataSourceHackerNews
   models.User:
     properties:
       avatarUrl:
@@ -94,7 +115,7 @@ definitions:
         type: string
       dataSources:
         items:
-          type: string
+          $ref: '#/definitions/models.DataSource'
         type: array
       email:
         example: john@example.com
@@ -122,6 +143,23 @@ definitions:
         example: "2024-01-01T00:00:00Z"
         type: string
     type: object
+  services.Article:
+    properties:
+      publishedAt:
+        type: string
+      source:
+        type: string
+      summary:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      url:
+        type: string
+    type: object
 host: localhost:8081
 info:
   contact: {}
@@ -129,6 +167,53 @@ info:
   title: The Post Pilot API
   version: "1.0"
 paths:
+  /articles/suggestions:
+    get:
+      description: Returns a list of technical articles from user-configured sources
+        (RSS, dev.to, Hacker News)
+      parameters:
+      - description: Search keyword
+        in: query
+        name: q
+        type: string
+      - description: Published after (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: Published before (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      - description: Comma-separated tags
+        in: query
+        name: tags
+        type: string
+      - description: Max articles (default 6, max 10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Exemplo de resposta: [{\"title\":\"Go 1.22 Released\",\"url\":\"https://dev.to/...\",\"source\":\"dev.to\",\"publishedAt\":\"2024-05-01T12:00:00Z\",\"summary\":\"Resumo...\",\"tags\":[\"go\",\"release\"]}]'
+          schema:
+            items:
+              $ref: '#/definitions/services.Article'
+            type: array
+        "401":
+          description: '{ \"error\": \"Invalid user claims\" }'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: '{ \"error\": \"Internal server error\" }'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get article suggestions from user sources
+      tags:
+      - Articles
   /auth/google/callback:
     get:
       description: Handles Google OpenID Connect callback, authenticates or creates

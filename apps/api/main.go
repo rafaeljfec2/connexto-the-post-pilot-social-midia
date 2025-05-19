@@ -50,8 +50,11 @@ func main() {
 	authService := services.NewAuthService(repo)
 	authHandler := appPkg.NewAuthHandler(authService)
 
+	articleService := services.NewArticleService()
+	articleHandler := appPkg.NewArticleHandler(articleService)
+
 	// Centralize as rotas
-	appPkg.RegisterRoutes(app, authHandler)
+	appPkg.RegisterRoutes(app, authHandler, articleHandler)
 
 	log.Printf("Starting Fiber server on port %s...", port)
 	log.Fatal(app.Listen(":" + port))

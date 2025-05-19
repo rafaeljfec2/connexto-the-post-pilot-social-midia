@@ -57,11 +57,65 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
 | Autenticação via LinkedIn                 | ✅ Pronto   |
 | Autenticação via Google                   | ✅ Pronto   |
 | Salvar tokens e dados do usuário          | ✅ Pronto   |
-| Buscar tema de fontes técnicas (RSS/APIs) | ⬜ Pendente |
+| Buscar tema de fontes técnicas (RSS/APIs) | ✅ Pronto   |
 | Gerar texto com OpenAI                    | ⬜ Pendente |
 | Exibir no painel (botão "Aprovar")        | ⬜ Pendente |
 | Publicar no LinkedIn com click            | ⬜ Pendente |
 | Histórico de posts                        | ⬜ Pendente |
+
+### Detalhes Técnicos Implementados
+
+1. **Autenticação Social**
+
+   - OpenID Connect com LinkedIn e Google
+   - JWT para autenticação de API
+   - Middleware de autenticação e rate limiting
+   - Salvamento seguro de tokens e dados do usuário
+
+2. **Fontes Técnicas**
+
+   - Integração com RSS feeds
+   - API do dev.to com suporte a tags
+   - Hacker News API para top stories
+   - Normalização de artigos em formato comum
+   - Filtros por palavra-chave, data e tags
+   - Limite configurável de resultados
+
+3. **API RESTful**
+
+   - Documentação Swagger completa
+   - Endpoints protegidos com JWT
+   - Respostas padronizadas
+   - Tratamento de erros centralizado
+
+4. **Segurança**
+   - Rate limiting por IP
+   - Sanitização de inputs
+   - Validação de tokens
+   - Proteção contra CSRF
+   - Headers de segurança
+
+### Próximos Passos
+
+1. **Integração com OpenAI**
+
+   - Configuração de chave API do usuário
+   - Geração de texto baseada em artigos
+   - Personalização de prompts
+   - Cache de resultados
+
+2. **Frontend**
+
+   - Dashboard com sugestões
+   - Editor de posts
+   - Configuração de fontes
+   - Histórico de publicações
+
+3. **LinkedIn Integration**
+   - OAuth 2.0 para publicação
+   - Escrita de posts
+   - Agendamento
+   - Métricas de engajamento
 
 ---
 
@@ -136,3 +190,42 @@ pnpm lint:api       # Lint
 ## 📄 Licença
 
 MIT
+
+## 📚 Exemplos de Uso da API
+
+### Sugestão de Artigos Técnicos
+
+**Endpoint:**
+
+```
+GET /the-post-pilot/v1/articles/suggestions?q=go&tags=ai,cloud&limit=6
+Authorization: Bearer <seu_token_jwt>
+```
+
+**Exemplo de resposta:**
+
+```json
+[
+  {
+    "title": "Go 1.22 Released",
+    "url": "https://dev.to/golang/go-1-22-released-1234",
+    "source": "dev.to",
+    "publishedAt": "2024-05-01T12:00:00Z",
+    "summary": "Resumo do artigo...",
+    "tags": ["go", "release"]
+  },
+  {
+    "title": "How to Parse RSS in Go",
+    "url": "https://medium.com/@user/how-to-parse-rss-in-go-5678",
+    "source": "Medium",
+    "publishedAt": "2024-04-28T09:00:00Z",
+    "summary": "Aprenda a consumir feeds RSS em Go...",
+    "tags": ["go", "rss"]
+  }
+]
+```
+
+- Os filtros `q`, `tags`, `from`, `to` e `limit` são opcionais.
+- O endpoint retorna até 6 artigos técnicos das fontes configuradas pelo usuário (RSS, dev.to, Hacker News).
+
+---

@@ -14,6 +14,8 @@ import (
 	"github.com/postpilot/api/internal/services"
 )
 
+const bearerPrefix = "Bearer "
+
 // AuthHandler handles authentication related requests
 type AuthHandler struct {
 	AuthService services.AuthService
@@ -181,7 +183,13 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 	// Atualiza apenas os campos permitidos
 	user.OpenAiApiKey = req.OpenAiApiKey
 	user.OpenAiModel = req.OpenAiModel
-	user.DataSources = req.DataSources
+
+	// Converte []string para []models.DataSource
+	var dataSources []models.DataSource
+	for _, url := range req.DataSources {
+		dataSources = append(dataSources, models.DataSource{Url: url})
+	}
+	user.DataSources = dataSources
 
 	err = h.AuthService.UpdateUser(c.Context(), user)
 	if err != nil {
@@ -247,31 +255,8 @@ type linkedinEmailResponse struct {
 		Handle     string `json:"handle~"`
 		HandleData struct {
 			EmailAddress string `json:"emailAddress"`
-		} `json:"handle~"`
+		}
 	} `json:"elements"`
-}
-
-type linkedinProfileResponse struct {
-	ID        string `json:"id"`
-	FirstName struct {
-		Localized struct {
-			EnUS string `json:"en_US"`
-		} `json:"localized"`
-	} `json:"firstName"`
-	LastName struct {
-		Localized struct {
-			EnUS string `json:"en_US"`
-		} `json:"localized"`
-	} `json:"lastName"`
-	ProfilePicture struct {
-		DisplayImage struct {
-			Elements []struct {
-				Identifiers []struct {
-					Identifier string `json:"identifier"`
-				} `json:"identifiers"`
-			} `json:"elements"`
-		} `json:"displayImage~"`
-	} `json:"profilePicture"`
 }
 
 // LinkedInCallback godoc
@@ -331,7 +316,7 @@ type linkedinUserInfo struct {
 
 func fetchLinkedInUserInfo(token string) (*linkedinUserInfo, error) {
 	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/userinfo", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", bearerPrefix+token)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -367,45 +352,6 @@ func exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI stri
 		return "", err
 	}
 	return tokenResp.AccessToken, nil
-}
-
-func fetchLinkedInProfile(token string) (*linkedinProfileResponse, error) {
-	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	var profile linkedinProfileResponse
-	if err := json.Unmarshal(body, &profile); err != nil {
-		return nil, err
-	}
-	return &profile, nil
-}
-
-func fetchLinkedInEmail(token string) (string, error) {
-	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	var emailResp linkedinEmailResponse
-	if err := json.Unmarshal(body, &emailResp); err != nil {
-		return "", err
-	}
-	if len(emailResp.Elements) > 0 {
-		return emailResp.Elements[0].HandleData.EmailAddress, nil
-	}
-	return "", fmt.Errorf("email not found")
 }
 
 // GoogleAuthURL godoc
@@ -513,7 +459,7 @@ func exchangeGoogleCodeForToken(code, clientID, clientSecret, redirectURI string
 
 func fetchGoogleUserInfo(token string) (*googleUserInfo, error) {
 	req, _ := http.NewRequest("GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", bearerPrefix+token)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {

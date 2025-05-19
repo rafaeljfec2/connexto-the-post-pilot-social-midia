@@ -9,7 +9,7 @@ import (
 	"github.com/postpilot/api/internal/middleware"
 )
 
-func RegisterRoutes(app *fiber.App, authHandler *AuthHandler) {
+func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *ArticleHandler) {
 	// Swagger docs
 	app.Get("/the-post-pilot/swagger/*", swagger.New())
 
@@ -33,4 +33,5 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler) {
 	protected := app.Group("/the-post-pilot/v1", middleware.JWTAuth(os.Getenv("JWT_SECRET")))
 	protected.Get("/me", authHandler.GetProfile)
 	protected.Put("/me", authHandler.UpdateProfile)
+	protected.Get("/articles/suggestions", articleHandler.GetSuggestions)
 }

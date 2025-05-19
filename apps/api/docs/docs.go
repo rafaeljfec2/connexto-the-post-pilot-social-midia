@@ -15,6 +15,75 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/articles/suggestions": {
+            "get": {
+                "description": "Returns a list of technical articles from user-configured sources (RSS, dev.to, Hacker News)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Get article suggestions from user sources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search keyword",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Published after (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Published before (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated tags",
+                        "name": "tags",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max articles (default 6, max 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Exemplo de resposta: [{\\\"title\\\":\\\"Go 1.22 Released\\\",\\\"url\\\":\\\"https://dev.to/...\\\",\\\"source\\\":\\\"dev.to\\\",\\\"publishedAt\\\":\\\"2024-05-01T12:00:00Z\\\",\\\"summary\\\":\\\"Resumo...\\\",\\\"tags\\\":[\\\"go\\\",\\\"release\\\"]}]",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/services.Article"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "{ \\\"error\\\": \\\"Invalid user claims\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "{ \\\"error\\\": \\\"Internal server error\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/auth/google/callback": {
             "get": {
                 "description": "Handles Google OpenID Connect callback, authenticates or creates user, returns JWT and user object",
@@ -546,6 +615,36 @@ const docTemplate = `{
                 "AuthProviderLinkedIn"
             ]
         },
+        "models.DataSource": {
+            "type": "object",
+            "properties": {
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "$ref": "#/definitions/models.DataSourceType"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DataSourceType": {
+            "type": "string",
+            "enum": [
+                "rss",
+                "devto",
+                "hackernews"
+            ],
+            "x-enum-varnames": [
+                "DataSourceRSS",
+                "DataSourceDevTo",
+                "DataSourceHackerNews"
+            ]
+        },
         "models.User": {
             "type": "object",
             "properties": {
@@ -560,7 +659,7 @@ const docTemplate = `{
                 "dataSources": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/models.DataSource"
                     }
                 },
                 "email": {
@@ -599,6 +698,32 @@ const docTemplate = `{
                 "updatedAt": {
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "services.Article": {
+            "type": "object",
+            "properties": {
+                "publishedAt": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         }
