@@ -8,7 +8,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/services"
+	"go.uber.org/zap"
 )
 
 type ArticleHandler struct {
@@ -39,11 +41,13 @@ func (h *ArticleHandler) GetSuggestions(c *fiber.Ctx) error {
 	claims := c.Locals("user").(jwt.MapClaims)
 	userId, ok := claims["sub"].(string)
 	if !ok {
+		log.Logger.Warn("Invalid user claims on article suggestions", zap.String("endpoint", "/articles/suggestions"))
 		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "Invalid user claims"})
 	}
 
 	user, err := h.AuthService.GetUserByID(c.Context(), userId)
 	if err != nil || user == nil {
+		log.Logger.Warn("User not found on article suggestions", zap.String("userId", userId), zap.String("endpoint", "/articles/suggestions"))
 		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "User not found"})
 	}
 
@@ -79,8 +83,10 @@ func (h *ArticleHandler) GetSuggestions(c *fiber.Ctx) error {
 
 	articles, err := h.ArticleService.FetchSuggestions(c.Context(), user, q, from, to, tags, limit)
 	if err != nil {
+		log.Logger.Error("Failed to fetch article suggestions", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/articles/suggestions"))
 		return c.Status(http.StatusInternalServerError).JSON(map[string]interface{}{"error": err.Error()})
 	}
+	log.Logger.Info("Article suggestions fetched", zap.String("userId", userId), zap.String("endpoint", "/articles/suggestions"), zap.Int("count", len(articles)))
 	return c.JSON(articles)
 }
 

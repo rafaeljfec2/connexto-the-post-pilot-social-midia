@@ -1,5 +1,24 @@
 basePath: /the-post-pilot/v1
 definitions:
+  app.generatePostRequest:
+    properties:
+      topic:
+        type: string
+    type: object
+  app.generatePostResponse:
+    properties:
+      createdAt:
+        type: string
+      generatedText:
+        type: string
+      logId:
+        type: string
+      model:
+        type: string
+      usage:
+        additionalProperties: true
+        type: object
+    type: object
   app.loginRequest:
     properties:
       email:
@@ -504,6 +523,45 @@ paths:
       summary: Update user profile/configuration
       tags:
       - Auth
+  /posts/generate:
+    post:
+      consumes:
+      - application/json
+      description: Gera sugestão de post a partir de um tema/artigo usando OpenAI
+      parameters:
+      - description: Dados para geração do post
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/app.generatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.generatePostResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Generate post suggestion using OpenAI
+      tags:
+      - Posts
 schemes:
 - http
 - https

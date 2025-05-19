@@ -9,7 +9,7 @@ import (
 	"github.com/postpilot/api/internal/middleware"
 )
 
-func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *ArticleHandler) {
+func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *ArticleHandler, postHandler *PostHandler) {
 	// Swagger docs
 	app.Get("/the-post-pilot/swagger/*", swagger.New())
 
@@ -34,4 +34,5 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *Ar
 	protected.Get("/me", authHandler.GetProfile)
 	protected.Put("/me", authHandler.UpdateProfile)
 	protected.Get("/articles/suggestions", articleHandler.GetSuggestions)
+	protected.Post("/posts/generate", postHandler.Generate)
 }

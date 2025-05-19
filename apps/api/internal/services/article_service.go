@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/mmcdole/gofeed"
+	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/models"
+	"go.uber.org/zap"
 )
 
 type Article struct {
@@ -123,6 +125,7 @@ func fetchArticlesFromRSS(ctx context.Context, url string, limit int) ([]Article
 	parser := gofeed.NewParser()
 	feed, err := parser.ParseURLWithContext(url, ctx)
 	if err != nil {
+		log.Logger.Error("Failed to fetch RSS feed", zap.String("url", url), zap.Error(err))
 		return nil, err
 	}
 	articles := make([]Article, 0, limit)
@@ -142,6 +145,7 @@ func fetchArticlesFromRSS(ctx context.Context, url string, limit int) ([]Article
 			Summary:     item.Description,
 		})
 	}
+	log.Logger.Info("Fetched articles from RSS", zap.String("url", url), zap.Int("count", len(articles)))
 	return articles, nil
 }
 
@@ -178,19 +182,21 @@ type devtoArticle struct {
 func fetchArticlesFromDevTo(ctx context.Context, tags []string, limit int) ([]Article, error) {
 	baseURL := "https://dev.to/api/articles?per_page=%d"
 	if len(tags) > 0 {
-		baseURL += "&tag=" + tags[0] // dev.to só aceita um tag por vez na API pública
+		baseURL += "&tag=" + tags[0]
 	}
 	url := fmt.Sprintf(baseURL, limit)
 
 	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.Logger.Error("Failed to fetch dev.to articles", zap.String("url", url), zap.Error(err))
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	var devtoResp []devtoArticle
 	if err := json.NewDecoder(resp.Body).Decode(&devtoResp); err != nil {
+		log.Logger.Error("Failed to decode dev.to response", zap.String("url", url), zap.Error(err))
 		return nil, err
 	}
 	articles := make([]Article, 0, limit)
@@ -207,6 +213,7 @@ func fetchArticlesFromDevTo(ctx context.Context, tags []string, limit int) ([]Ar
 			Tags:        item.Tags,
 		})
 	}
+	log.Logger.Info("Fetched articles from dev.to", zap.String("url", url), zap.Int("count", len(articles)))
 	return articles, nil
 }
 
@@ -218,15 +225,16 @@ type hackerNewsItem struct {
 }
 
 func fetchArticlesFromHackerNews(ctx context.Context, limit int) ([]Article, error) {
-	// Buscar os IDs das top stories
 	req, _ := http.NewRequestWithContext(ctx, "GET", "https://hacker-news.firebaseio.com/v0/topstories.json", nil)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.Logger.Error("Failed to fetch Hacker News top stories", zap.Error(err))
 		return nil, err
 	}
 	defer resp.Body.Close()
 	var ids []int
 	if err := json.NewDecoder(resp.Body).Decode(&ids); err != nil {
+		log.Logger.Error("Failed to decode Hacker News IDs", zap.Error(err))
 		return nil, err
 	}
 
@@ -239,16 +247,18 @@ func fetchArticlesFromHackerNews(ctx context.Context, limit int) ([]Article, err
 		itemReq, _ := http.NewRequestWithContext(ctx, "GET", itemUrl, nil)
 		itemResp, err := http.DefaultClient.Do(itemReq)
 		if err != nil {
+			log.Logger.Warn("Failed to fetch Hacker News item", zap.String("itemUrl", itemUrl), zap.Error(err))
 			continue
 		}
 		var item hackerNewsItem
 		if err := json.NewDecoder(itemResp.Body).Decode(&item); err != nil {
 			itemResp.Body.Close()
+			log.Logger.Warn("Failed to decode Hacker News item", zap.String("itemUrl", itemUrl), zap.Error(err))
 			continue
 		}
 		itemResp.Body.Close()
 		if item.Url == "" {
-			continue // ignora itens sem URL externa
+			continue
 		}
 		articles = append(articles, Article{
 			Title:       item.Title,
@@ -257,5 +267,6 @@ func fetchArticlesFromHackerNews(ctx context.Context, limit int) ([]Article, err
 			PublishedAt: time.Unix(item.Time, 0),
 		})
 	}
+	log.Logger.Info("Fetched articles from Hacker News", zap.Int("count", len(articles)))
 	return articles, nil
 }

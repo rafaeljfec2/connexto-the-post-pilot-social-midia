@@ -1,0 +1,75 @@
+package app
+
+import (
+	"net/http"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/postpilot/api/internal/log"
+	"github.com/postpilot/api/internal/services"
+	"go.uber.org/zap"
+)
+
+type PostHandler struct {
+	PostService services.PostService
+	AuthService services.AuthService
+}
+
+func NewPostHandler(postService services.PostService, authService services.AuthService) *PostHandler {
+	return &PostHandler{PostService: postService, AuthService: authService}
+}
+
+// Generate godoc
+// @Summary Generate post suggestion using OpenAI
+// @Description Gera sugestão de post a partir de um tema/artigo usando OpenAI
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param input body generatePostRequest true "Dados para geração do post"
+// @Success 200 {object} generatePostResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /posts/generate [post]
+func (h *PostHandler) Generate(c *fiber.Ctx) error {
+	claims := c.Locals("user").(jwt.MapClaims)
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		log.Logger.Warn("Invalid user claims on post generate", zap.String("endpoint", "/posts/generate"))
+		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "Invalid user claims"})
+	}
+
+	var req generatePostRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Logger.Warn("Invalid generate post payload", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	user, err := h.AuthService.GetUserByID(c.Context(), userId)
+	if err != nil || user == nil {
+		log.Logger.Warn("User not found on post generate", zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "User not found"})
+	}
+
+	resp, err := h.PostService.GeneratePost(c.Context(), user, req.Topic)
+	if err != nil {
+		log.Logger.Error("Failed to generate post", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+		return c.Status(http.StatusInternalServerError).JSON(map[string]interface{}{"error": err.Error()})
+	}
+
+	log.Logger.Info("Post generated", zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+	return c.Status(http.StatusOK).JSON(resp)
+}
+
+type generatePostRequest struct {
+	Topic string `json:"topic"`
+}
+
+type generatePostResponse struct {
+	GeneratedText string                 `json:"generatedText"`
+	Model         string                 `json:"model"`
+	Usage         map[string]interface{} `json:"usage,omitempty"`
+	CreatedAt     string                 `json:"createdAt"`
+	LogId         string                 `json:"logId"`
+}

@@ -504,9 +504,98 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/posts/generate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Gera sugestão de post a partir de um tema/artigo usando OpenAI",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Generate post suggestion using OpenAI",
+                "parameters": [
+                    {
+                        "description": "Dados para geração do post",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/app.generatePostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.generatePostResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "app.generatePostRequest": {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.generatePostResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "generatedText": {
+                    "type": "string"
+                },
+                "logId": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "usage": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
         "app.loginRequest": {
             "type": "object",
             "properties": {

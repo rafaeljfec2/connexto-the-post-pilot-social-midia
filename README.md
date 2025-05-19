@@ -45,7 +45,7 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
 - **Autenticação via Google (OpenID Connect)**
 - **Salvamento de tokens e dados do usuário** (incluindo OpenAI)
 - **Estrutura para fontes técnicas** (RSS, dev.to, Medium, Hacker News)
-- **Geração de texto com OpenAI** _(em breve)_
+- **Geração de texto com OpenAI**
 - **Exibição de sugestões no painel com botão "Aprovar"** _(em breve)_
 - **Publicação no LinkedIn com 1 click** _(em breve)_
 - **Histórico de posts** _(em breve)_
@@ -58,7 +58,7 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
 | Autenticação via Google                   | ✅ Pronto   |
 | Salvar tokens e dados do usuário          | ✅ Pronto   |
 | Buscar tema de fontes técnicas (RSS/APIs) | ✅ Pronto   |
-| Gerar texto com OpenAI                    | ⬜ Pendente |
+| Gerar texto com OpenAI                    | ✅ Pronto   |
 | Exibir no painel (botão "Aprovar")        | ⬜ Pendente |
 | Publicar no LinkedIn com click            | ⬜ Pendente |
 | Histórico de posts                        | ⬜ Pendente |
@@ -197,10 +197,7 @@ MIT
 
 **Endpoint:**
 
-```
-GET /the-post-pilot/v1/articles/suggestions?q=go&tags=ai,cloud&limit=6
-Authorization: Bearer <seu_token_jwt>
-```
+GET /the-post-pilot/v1/articles/suggestions
 
 **Exemplo de resposta:**
 
@@ -209,23 +206,53 @@ Authorization: Bearer <seu_token_jwt>
   {
     "title": "Go 1.22 Released",
     "url": "https://dev.to/golang/go-1-22-released-1234",
-    "source": "dev.to",
+    "source": "DEV Community",
     "publishedAt": "2024-05-01T12:00:00Z",
-    "summary": "Resumo do artigo...",
+    "summary": "Resumo do artigo em português...",
     "tags": ["go", "release"]
-  },
-  {
-    "title": "How to Parse RSS in Go",
-    "url": "https://medium.com/@user/how-to-parse-rss-in-go-5678",
-    "source": "Medium",
-    "publishedAt": "2024-04-28T09:00:00Z",
-    "summary": "Aprenda a consumir feeds RSS em Go...",
-    "tags": ["go", "rss"]
   }
 ]
 ```
 
-- Os filtros `q`, `tags`, `from`, `to` e `limit` são opcionais.
-- O endpoint retorna até 6 artigos técnicos das fontes configuradas pelo usuário (RSS, dev.to, Hacker News).
+### Geração de Post com OpenAI
+
+**Endpoint:**
+
+POST /the-post-pilot/v1/posts/generate
+
+**Payload:**
+
+```json
+{
+  "topic": "Como usar IA para automação de posts"
+}
+```
+
+**Resposta:**
+
+```json
+{
+  "generatedText": "Descubra como a inteligência artificial pode revolucionar sua estratégia de conteúdo...",
+  "model": "gpt-3.5-turbo",
+  "usage": {
+    "prompt_tokens": 30,
+    "completion_tokens": 100,
+    "total_tokens": 130
+  },
+  "createdAt": "2025-05-19T22:09:39Z",
+  "logId": "682bac2309c40fa708839ee2"
+}
+```
+
+### Logging e Auditoria
+
+- Cada geração de post é registrada no MongoDB com:
+  - ID do usuário
+  - Input enviado
+  - Output gerado
+  - Modelo e usage
+  - Status e erros (se houver)
+  - Timestamp
+- Permite rastreabilidade e análise de uso da IA.
 
 ---

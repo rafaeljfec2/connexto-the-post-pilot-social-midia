@@ -5,7 +5,7 @@
   "description": "Social media automation platform with AI integration",
   "scripts": {
     "dev:web": "pnpm --filter post-pilot-web dev",
-    "dev:api": "pnpm --filter api dev",
+    "dev:api": "cd apps/api && go run main.go",
     "build:web": "pnpm --filter post-pilot-web build",
     "build:api": "pnpm --filter api build",
     "test:web": "pnpm --filter post-pilot-web test",

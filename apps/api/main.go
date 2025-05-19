@@ -57,7 +57,10 @@ func main() {
 	articleService := services.NewArticleService()
 	articleHandler := appPkg.NewArticleHandler(articleService, authService)
 
-	appPkg.RegisterRoutes(app, authHandler, articleHandler)
+	postService := services.NewPostService()
+	postHandler := appPkg.NewPostHandler(postService, authService)
+
+	appPkg.RegisterRoutes(app, authHandler, articleHandler, postHandler)
 
 	log.Logger.Info("Starting Fiber server", zap.String("port", port))
 	if err := app.Listen(":" + port); err != nil {
