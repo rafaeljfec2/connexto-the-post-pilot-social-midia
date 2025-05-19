@@ -16,6 +16,27 @@ Aplicativo de gerenciamento e automação de posts e interações em redes socia
 
 ---
 
+## 🏗️ Arquitetura Monorepo
+
+Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm workspaces](https://pnpm.io/workspaces), para facilitar a manutenção, o versionamento e a colaboração entre múltiplos apps e pacotes.
+
+- **apps/web**: Frontend em React + Vite + TypeScript
+- **apps/api**: Backend em Go (Fiber)
+- **packages/**: (futuro) Pacotes compartilhados entre frontend e backend (ex: tipos, utilitários)
+- **Gerenciamento de dependências** centralizado no `package.json` raiz
+- **Scripts unificados** para build, lint, testes e geração de documentação
+- **Isolamento de ambientes**: cada app pode ser desenvolvido, testado e deployado de forma independente
+- **Facilidade para CI/CD**: pipelines podem rodar scripts em todos os workspaces ou apenas nos afetados por mudanças
+
+**Vantagens do monorepo:**
+
+- Redução de duplicidade de código
+- Compartilhamento fácil de tipos e utilitários
+- Padronização de ferramentas e processos
+- Melhor experiência para times de produto e engenharia
+
+---
+
 ## 🚀 MVP — Funcionalidades e Progresso
 
 ### Funcionalidades do MVP
