@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/postpilot/api/internal/models"
 	"github.com/postpilot/api/internal/services"
 )
@@ -164,7 +165,7 @@ type updateProfileRequest struct {
 // @Failure 500 {object} map[string]interface{}
 // @Router /me [put]
 func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
-	claims := c.Locals("user").(map[string]interface{})
+	claims := c.Locals("user").(jwt.MapClaims)
 	userId, ok := claims["sub"].(string)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user claims"})
@@ -209,7 +210,7 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Failure 404 {object} map[string]interface{}
 // @Router /me [get]
 func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
-	claims := c.Locals("user").(map[string]interface{})
+	claims := c.Locals("user").(jwt.MapClaims)
 	userId, ok := claims["sub"].(string)
 	if !ok {
 		return c.Status(401).JSON(fiber.Map{"error": "Invalid user claims"})

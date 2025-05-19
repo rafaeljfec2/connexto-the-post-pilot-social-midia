@@ -211,6 +211,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Get article suggestions from user sources
       tags:
       - Articles

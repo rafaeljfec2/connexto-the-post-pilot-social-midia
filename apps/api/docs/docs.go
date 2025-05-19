@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/articles/suggestions": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a list of technical articles from user-configured sources (RSS, dev.to, Hacker News)",
                 "produces": [
                     "application/json"

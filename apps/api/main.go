@@ -51,7 +51,7 @@ func main() {
 	authHandler := appPkg.NewAuthHandler(authService)
 
 	articleService := services.NewArticleService()
-	articleHandler := appPkg.NewArticleHandler(articleService)
+	articleHandler := appPkg.NewArticleHandler(articleService, authService)
 
 	// Centralize as rotas
 	appPkg.RegisterRoutes(app, authHandler, articleHandler)

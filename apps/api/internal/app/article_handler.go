@@ -1,23 +1,23 @@
 package app
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/postpilot/api/internal/models"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/postpilot/api/internal/services"
 )
 
 type ArticleHandler struct {
 	ArticleService services.ArticleService
+	AuthService    services.AuthService
 }
 
-func NewArticleHandler(articleService services.ArticleService) *ArticleHandler {
-	return &ArticleHandler{ArticleService: articleService}
+func NewArticleHandler(articleService services.ArticleService, authService services.AuthService) *ArticleHandler {
+	return &ArticleHandler{ArticleService: articleService, AuthService: authService}
 }
 
 // GetSuggestions godoc
@@ -33,17 +33,16 @@ func NewArticleHandler(articleService services.ArticleService) *ArticleHandler {
 // @Success 200 {array} services.Article "Exemplo de resposta: [{\"title\":\"Go 1.22 Released\",\"url\":\"https://dev.to/...\",\"source\":\"dev.to\",\"publishedAt\":\"2024-05-01T12:00:00Z\",\"summary\":\"Resumo...\",\"tags\":[\"go\",\"release\"]}]"
 // @Failure 401 {object} map[string]interface{} "{ \"error\": \"Invalid user claims\" }"
 // @Failure 500 {object} map[string]interface{} "{ \"error\": \"Internal server error\" }"
+// @Security BearerAuth
 // @Router /articles/suggestions [get]
 func (h *ArticleHandler) GetSuggestions(c *fiber.Ctx) error {
-	claims := c.Locals("user").(map[string]interface{})
+	claims := c.Locals("user").(jwt.MapClaims)
 	userId, ok := claims["sub"].(string)
 	if !ok {
 		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "Invalid user claims"})
 	}
 
-	user, err := h.ArticleService.(interface {
-		GetUserByID(ctx context.Context, id string) (*models.User, error)
-	}).GetUserByID(c.Context(), userId)
+	user, err := h.AuthService.GetUserByID(c.Context(), userId)
 	if err != nil || user == nil {
 		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "User not found"})
 	}
