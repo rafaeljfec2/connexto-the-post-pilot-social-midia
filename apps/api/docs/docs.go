@@ -403,6 +403,11 @@ const docTemplate = `{
         },
         "/me": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the full user object for the authenticated user",
                 "produces": [
                     "application/json"
@@ -435,6 +440,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update OpenAI and data sources for the authenticated user",
                 "consumes": [
                     "application/json"
@@ -596,7 +606,7 @@ const docTemplate = `{
                 "dataSources": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/models.DataSource"
                     }
                 },
                 "openAiApiKey": {

@@ -146,9 +146,9 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 }
 
 type updateProfileRequest struct {
-	OpenAiApiKey string   `json:"openAiApiKey"`
-	OpenAiModel  string   `json:"openAiModel"`
-	DataSources  []string `json:"dataSources"`
+	OpenAiApiKey string              `json:"openAiApiKey"`
+	OpenAiModel  string              `json:"openAiModel"`
+	DataSources  []models.DataSource `json:"dataSources"`
 }
 
 // UpdateProfile godoc
@@ -163,6 +163,7 @@ type updateProfileRequest struct {
 // @Failure 401 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
 // @Router /me [put]
 func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 	claims := c.Locals("user").(jwt.MapClaims)
@@ -184,13 +185,7 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 	// Atualiza apenas os campos permitidos
 	user.OpenAiApiKey = req.OpenAiApiKey
 	user.OpenAiModel = req.OpenAiModel
-
-	// Converte []string para []models.DataSource
-	var dataSources []models.DataSource
-	for _, url := range req.DataSources {
-		dataSources = append(dataSources, models.DataSource{Url: url})
-	}
-	user.DataSources = dataSources
+	user.DataSources = req.DataSources
 
 	err = h.AuthService.UpdateUser(c.Context(), user)
 	if err != nil {
@@ -208,6 +203,7 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Success 200 {object} models.User
 // @Failure 401 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
+// @Security BearerAuth
 // @Router /me [get]
 func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
 	claims := c.Locals("user").(jwt.MapClaims)

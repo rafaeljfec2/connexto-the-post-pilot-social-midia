@@ -67,7 +67,7 @@ definitions:
     properties:
       dataSources:
         items:
-          type: string
+          $ref: '#/definitions/models.DataSource'
         type: array
       openAiApiKey:
         type: string
@@ -451,6 +451,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Get authenticated user profile
       tags:
       - Auth
@@ -492,6 +494,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Update user profile/configuration
       tags:
       - Auth
