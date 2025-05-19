@@ -33,30 +33,35 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "example": "AI",
                         "description": "Search keyword",
                         "name": "q",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "example": "2024-05-01",
                         "description": "Published after (YYYY-MM-DD)",
                         "name": "from",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "example": "2024-06-01",
                         "description": "Published before (YYYY-MM-DD)",
                         "name": "to",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "example": "\"go,ai,architecture\"",
                         "description": "Comma-separated tags",
                         "name": "tags",
                         "in": "query"
                     },
                     {
                         "type": "integer",
+                        "example": 10,
                         "description": "Max articles (default 6, max 100)",
                         "name": "limit",
                         "in": "query"
@@ -64,7 +69,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Exemplo de resposta: [{\\\"title\\\":\\\"Go 1.22 Released\\\",\\\"url\\\":\\\"https://dev.to/...\\\",\\\"source\\\":\\\"dev.to\\\",\\\"publishedAt\\\":\\\"2024-05-01T12:00:00Z\\\",\\\"summary\\\":\\\"Resumo...\\\",\\\"tags\\\":[\\\"go\\\",\\\"release\\\"]}]",
+                        "description": "OK\" x-example([{\"title\":\"Go 1.22 Released\",\"url\":\"https://dev.to/golang/go-1-22-released-1234\",\"source\":\"DEV Community\",\"publishedAt\":\"2024-05-01T12:00:00Z\",\"summary\":\"Resumo do artigo em português...\",\"tags\":[\"go\",\"release\"]}])",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -403,11 +408,6 @@ const docTemplate = `{
         },
         "/me": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Returns the full user object for the authenticated user",
                 "produces": [
                     "application/json"
@@ -418,7 +418,7 @@ const docTemplate = `{
                 "summary": "Get authenticated user profile",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Exemplo de resposta: {\\\"id\\\":\\\"123\\\",\\\"name\\\":\\\"João Silva\\\",\\\"email\\\":\\\"joao@exemplo.com\\\",\\\"avatarUrl\\\":\\\"https://exemplo.com/avatar.jpg\\\",\\\"provider\\\":\\\"google\\\",\\\"providerId\\\":\\\"abc123\\\",\\\"openAiApiKey\\\":\\\"sk-...\\\",\\\"openAiModel\\\":\\\"gpt-4\\\",\\\"dataSources\\\":[{\\\"type\\\":\\\"rss\\\",\\\"url\\\":\\\"https://martinfowler.com/feed.atom\\\",\\\"tags\\\":[\\\"architecture\\\",\\\"ai\\\"]}],\\\"createdAt\\\":\\\"2024-01-01T00:00:00Z\\\",\\\"updatedAt\\\":\\\"2024-01-01T00:00:00Z\\\"}",
                         "schema": {
                             "$ref": "#/definitions/models.User"
                         }
@@ -469,7 +469,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Exemplo de resposta: {\\\"id\\\":\\\"123\\\",\\\"name\\\":\\\"João Silva\\\",\\\"email\\\":\\\"joao@exemplo.com\\\",\\\"avatarUrl\\\":\\\"https://exemplo.com/avatar.jpg\\\",\\\"provider\\\":\\\"google\\\",\\\"providerId\\\":\\\"abc123\\\",\\\"openAiApiKey\\\":\\\"sk-...\\\",\\\"openAiModel\\\":\\\"gpt-4\\\",\\\"dataSources\\\":[{\\\"type\\\":\\\"rss\\\",\\\"url\\\":\\\"https://martinfowler.com/feed.atom\\\",\\\"tags\\\":[\\\"architecture\\\",\\\"ai\\\"]}],\\\"createdAt\\\":\\\"2024-01-01T00:00:00Z\\\",\\\"updatedAt\\\":\\\"2024-01-01T00:00:00Z\\\"}",
                         "schema": {
                             "$ref": "#/definitions/models.User"
                         }

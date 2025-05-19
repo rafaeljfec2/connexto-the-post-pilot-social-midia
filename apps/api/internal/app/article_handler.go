@@ -25,12 +25,12 @@ func NewArticleHandler(articleService services.ArticleService, authService servi
 // @Description Returns a list of technical articles from user-configured sources (RSS, dev.to, Hacker News)
 // @Tags Articles
 // @Produce json
-// @Param q query string false "Search keyword"
-// @Param from query string false "Published after (YYYY-MM-DD)"
-// @Param to query string false "Published before (YYYY-MM-DD)"
-// @Param tags query string false "Comma-separated tags"
-// @Param limit query int false "Max articles (default 6, max 100)"
-// @Success 200 {array} services.Article "Exemplo de resposta: [{\"title\":\"Go 1.22 Released\",\"url\":\"https://dev.to/...\",\"source\":\"dev.to\",\"publishedAt\":\"2024-05-01T12:00:00Z\",\"summary\":\"Resumo...\",\"tags\":[\"go\",\"release\"]}]"
+// @Param q query string false "Search keyword" example(AI)
+// @Param from query string false "Published after (YYYY-MM-DD)" example(2024-05-01)
+// @Param to query string false "Published before (YYYY-MM-DD)" example(2024-06-01)
+// @Param tags query string false "Comma-separated tags" example("go,ai,architecture")
+// @Param limit query int false "Max articles (default 6, max 100)" example(10)
+// @Success 200 {array} services.Article "OK" x-example([{"title":"Go 1.22 Released","url":"https://dev.to/golang/go-1-22-released-1234","source":"DEV Community","publishedAt":"2024-05-01T12:00:00Z","summary":"Resumo do artigo em português...","tags":["go","release"]}])
 // @Failure 401 {object} map[string]interface{} "{ \"error\": \"Invalid user claims\" }"
 // @Failure 500 {object} map[string]interface{} "{ \"error\": \"Internal server error\" }"
 // @Security BearerAuth

@@ -173,22 +173,27 @@ paths:
         (RSS, dev.to, Hacker News)
       parameters:
       - description: Search keyword
+        example: AI
         in: query
         name: q
         type: string
       - description: Published after (YYYY-MM-DD)
+        example: "2024-05-01"
         in: query
         name: from
         type: string
       - description: Published before (YYYY-MM-DD)
+        example: "2024-06-01"
         in: query
         name: to
         type: string
       - description: Comma-separated tags
+        example: '"go,ai,architecture"'
         in: query
         name: tags
         type: string
       - description: Max articles (default 6, max 100)
+        example: 10
         in: query
         name: limit
         type: integer
@@ -196,7 +201,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: 'Exemplo de resposta: [{\"title\":\"Go 1.22 Released\",\"url\":\"https://dev.to/...\",\"source\":\"dev.to\",\"publishedAt\":\"2024-05-01T12:00:00Z\",\"summary\":\"Resumo...\",\"tags\":[\"go\",\"release\"]}]'
+          description: OK" x-example([{"title":"Go 1.22 Released","url":"https://dev.to/golang/go-1-22-released-1234","source":"DEV
+            Community","publishedAt":"2024-05-01T12:00:00Z","summary":"Resumo do artigo
+            em português...","tags":["go","release"]}])
           schema:
             items:
               $ref: '#/definitions/services.Article'
@@ -438,7 +445,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'Exemplo de resposta: {\"id\":\"123\",\"name\":\"João Silva\",\"email\":\"joao@exemplo.com\",\"avatarUrl\":\"https://exemplo.com/avatar.jpg\",\"provider\":\"google\",\"providerId\":\"abc123\",\"openAiApiKey\":\"sk-...\",\"openAiModel\":\"gpt-4\",\"dataSources\":[{\"type\":\"rss\",\"url\":\"https://martinfowler.com/feed.atom\",\"tags\":[\"architecture\",\"ai\"]}],\"createdAt\":\"2024-01-01T00:00:00Z\",\"updatedAt\":\"2024-01-01T00:00:00Z\"}'
           schema:
             $ref: '#/definitions/models.User'
         "401":
@@ -451,8 +458,6 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      security:
-      - BearerAuth: []
       summary: Get authenticated user profile
       tags:
       - Auth
@@ -471,7 +476,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'Exemplo de resposta: {\"id\":\"123\",\"name\":\"João Silva\",\"email\":\"joao@exemplo.com\",\"avatarUrl\":\"https://exemplo.com/avatar.jpg\",\"provider\":\"google\",\"providerId\":\"abc123\",\"openAiApiKey\":\"sk-...\",\"openAiModel\":\"gpt-4\",\"dataSources\":[{\"type\":\"rss\",\"url\":\"https://martinfowler.com/feed.atom\",\"tags\":[\"architecture\",\"ai\"]}],\"createdAt\":\"2024-01-01T00:00:00Z\",\"updatedAt\":\"2024-01-01T00:00:00Z\"}'
           schema:
             $ref: '#/definitions/models.User'
         "400":

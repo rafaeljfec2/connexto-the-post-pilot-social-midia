@@ -157,8 +157,8 @@ type updateProfileRequest struct {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param input body updateProfileRequest true "Profile update info"
-// @Success 200 {object} models.User
+// @Param input body app.updateProfileRequest true "Profile update info" example({"openAiApiKey":"sk-...","openAiModel":"gpt-4","dataSources":[{"type":"rss","url":"https://martinfowler.com/feed.atom","tags":["architecture","ai"]},{"type":"devto","url":"https://dev.to","tags":["backend","cloud"]}]})
+// @Success 200 {object} models.User "Exemplo de resposta: {\"id\":\"123\",\"name\":\"João Silva\",\"email\":\"joao@exemplo.com\",\"avatarUrl\":\"https://exemplo.com/avatar.jpg\",\"provider\":\"google\",\"providerId\":\"abc123\",\"openAiApiKey\":\"sk-...\",\"openAiModel\":\"gpt-4\",\"dataSources\":[{\"type\":\"rss\",\"url\":\"https://martinfowler.com/feed.atom\",\"tags\":[\"architecture\",\"ai\"]}],\"createdAt\":\"2024-01-01T00:00:00Z\",\"updatedAt\":\"2024-01-01T00:00:00Z\"}"
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
@@ -200,10 +200,9 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Description Returns the full user object for the authenticated user
 // @Tags Auth
 // @Produce json
-// @Success 200 {object} models.User
+// @Success 200 {object} models.User "Exemplo de resposta: {\"id\":\"123\",\"name\":\"João Silva\",\"email\":\"joao@exemplo.com\",\"avatarUrl\":\"https://exemplo.com/avatar.jpg\",\"provider\":\"google\",\"providerId\":\"abc123\",\"openAiApiKey\":\"sk-...\",\"openAiModel\":\"gpt-4\",\"dataSources\":[{\"type\":\"rss\",\"url\":\"https://martinfowler.com/feed.atom\",\"tags\":[\"architecture\",\"ai\"]}],\"createdAt\":\"2024-01-01T00:00:00Z\",\"updatedAt\":\"2024-01-01T00:00:00Z\"}"
 // @Failure 401 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
-// @Security BearerAuth
 // @Router /me [get]
 func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
 	claims := c.Locals("user").(jwt.MapClaims)
