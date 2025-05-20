@@ -1,16 +1,28 @@
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useTheme } from '@/hooks/useTheme'
-import { Moon, Sun, User, Bell } from 'lucide-react'
+import { Moon, Sun, Monitor, Bell } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/use-toast'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
+
+const themeOrder = ['light', 'dark', 'system'] as const
+const themeIcons = {
+  light: <Sun className="h-5 w-5" />,
+  dark: <Moon className="h-5 w-5" />,
+  system: <Monitor className="h-5 w-5" />,
+}
+
+function nextTheme(current: string) {
+  const idx = themeOrder.indexOf(current as any)
+  return themeOrder[(idx + 1) % themeOrder.length]
+}
 
 export function Header({
   onOpenSidebar,
@@ -28,12 +40,13 @@ export function Header({
       description: 'Redirecionando para a página inicial...',
     })
     navigate('/login')
+    logout()
   }
 
   return (
-    <header className="fixed left-0 top-0 z-40 flex h-16 w-full items-center rounded-lg border-b bg-background bg-white px-4 text-secondary-foreground text-secondary-foreground shadow shadow dark:bg-zinc-900 md:px-6">
+    <header className="fixed left-0 top-0 z-40 flex h-16 w-full items-center border-b bg-background px-8 py-2 text-secondary-foreground shadow dark:bg-zinc-900">
       <div className="flex w-full items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {SheetTrigger ? (
             <SheetTrigger asChild>
               <button
@@ -71,33 +84,29 @@ export function Header({
           )}
           <h1 className="text-lg font-semibold md:text-xl">The Post Pilot</h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Alternar tema"
+            onClick={() => setTheme(nextTheme(theme))}
+          >
+            {themeIcons[theme]}
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTheme('light')}>Claro</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('dark')}>Escuro</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('system')}>Sistema</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.picture} alt={user?.name} />
+                  <AvatarImage src={user?.avatarUrl} alt={user?.name} />
                   <AvatarFallback>{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => logout()}>Sair</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
