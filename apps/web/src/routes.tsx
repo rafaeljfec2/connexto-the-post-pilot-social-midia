@@ -1,60 +1,70 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import { ErrorPage } from '@/components/error/ErrorPage'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { Layout } from '@/components/layout'
 import { PendingPosts } from '@/pages/PendingPosts'
 import { History } from '@/pages/History'
 import { Settings } from '@/pages/Settings'
 import { Login } from '@/pages/Login'
 import { LandingPage } from '@/pages/LandingPage'
-import { Profile } from './pages/Profile'
-import { Subscription } from './pages/Subscription'
+import { Profile } from '@/pages/Profile'
+import { Subscription } from '@/pages/Subscription'
+import { PrivateRoute } from '@/components/PrivateRoute'
+import { Dashboard } from '@/pages/Dashboard'
+import { RootLayout } from '@/components/RootLayout'
 
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <LandingPage />,
-  },
-  {
-    path: '/login',
-    element: <Login />,
-  },
-  {
-    path: '/app',
-    element: (
-      <ErrorBoundary>
-        <ProtectedRoute>
-          <Layout />
-        </ProtectedRoute>
-      </ErrorBoundary>
-    ),
-    errorElement: <ErrorPage />,
+    element: <RootLayout />,
     children: [
       {
-        path: 'pending',
-        element: <PendingPosts />,
+        path: '/',
+        element: <LandingPage />,
       },
       {
-        path: 'history',
-        element: <History />,
+        path: '/login',
+        element: <Login />,
       },
       {
-        path: 'settings',
-        element: <Settings />,
+        path: '/app',
+        element: (
+          <ErrorBoundary>
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          </ErrorBoundary>
+        ),
+        children: [
+          {
+            index: true,
+            element: <Dashboard />,
+          },
+          {
+            path: 'pending',
+            element: <PendingPosts />,
+          },
+          {
+            path: 'history',
+            element: <History />,
+          },
+          {
+            path: 'settings',
+            element: <Settings />,
+          },
+          {
+            path: 'profile',
+            element: <Profile />,
+          },
+          {
+            path: 'subscription',
+            element: <Subscription />,
+          },
+        ],
       },
       {
-        path: 'profile',
-        element: <Profile />,
-      },
-      {
-        path: 'subscription',
-        element: <Subscription />,
+        path: '*',
+        element: <ErrorPage code={404} />,
       },
     ],
-  },
-  {
-    path: '*',
-    element: <ErrorPage code={404} />,
   },
 ])

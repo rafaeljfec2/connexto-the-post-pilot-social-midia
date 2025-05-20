@@ -1,17 +1,14 @@
-import { Outlet, useNavigation } from 'react-router-dom'
-import { Header } from './Header'
+import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
-import { PageLoader } from '../ui/PageLoader'
+import { Header } from './Header'
 
 export function Layout() {
-  const navigation = useNavigation()
   return (
-    <div className="relative h-screen w-full">
-      <Header />
-      <div className="flex h-full pt-16">
-        <Sidebar />
-        <main className="w-full flex-1 overflow-y-auto p-6 md:ml-64">
-          {navigation.state === 'loading' && <PageLoader />}
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <div className="flex flex-1 flex-col">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>

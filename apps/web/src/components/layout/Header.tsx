@@ -3,14 +3,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useTheme } from '@/components/ThemeProvider'
-import { Moon, Sun, User } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
+import { Moon, Sun, User, Bell } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/components/ui/use-toast'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAuth } from '@/hooks/useAuth'
 
 export function Header({
   onOpenSidebar,
@@ -19,6 +19,7 @@ export function Header({
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { user, logout } = useAuth()
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated')
@@ -71,26 +72,32 @@ export function Header({
           <h1 className="text-lg font-semibold md:text-xl">The Post Pilot</h1>
         </div>
         <div className="flex items-center gap-4">
-          <Button
-            variant="default"
-            size="icon"
-            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-          >
-            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Perfil</DropdownMenuItem>
-              <DropdownMenuItem>Configurações</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('light')}>Claro</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('dark')}>Escuro</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('system')}>Sistema</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.picture} alt={user?.name} />
+                  <AvatarFallback>{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => logout()}>Sair</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

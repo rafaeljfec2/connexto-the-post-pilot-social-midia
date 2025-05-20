@@ -1,87 +1,107 @@
 import { cn } from '@/lib/utils'
-import { History, Settings, Timer, User, CreditCard } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { useAuth } from '@/hooks/useAuth'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { BarChart3, Clock, FileText, Home, Settings, User, CreditCard } from 'lucide-react'
 
-const navigation = [
+const routes = [
   {
-    name: 'Posts Pendentes',
+    label: 'Dashboard',
+    icon: Home,
+    href: '/app',
+  },
+  {
+    label: 'Posts Pendentes',
+    icon: FileText,
     href: '/app/pending',
-    icon: Timer,
   },
   {
-    name: 'Histórico',
+    label: 'Histórico',
+    icon: Clock,
     href: '/app/history',
-    icon: History,
   },
   {
-    name: 'Assinatura',
-    href: '/app/subscription',
-    icon: CreditCard,
-  },
-  {
-    name: 'Perfil',
-    href: '/app/profile',
-    icon: User,
-  },
-  {
-    name: 'Configurações',
-    href: '/app/settings',
+    label: 'Configurações',
     icon: Settings,
+    href: '/app/settings',
+  },
+  {
+    label: 'Perfil',
+    icon: User,
+    href: '/app/profile',
+  },
+  {
+    label: 'Assinatura',
+    icon: CreditCard,
+    href: '/app/subscription',
   },
 ]
 
-interface SidebarProps {
-  mobile?: boolean
-}
+export function Sidebar() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
-export function Sidebar({ mobile = false }: SidebarProps) {
-  if (mobile) {
-    return (
-      <div className="flex w-64 flex-col bg-card text-secondary-foreground">
-        <nav className="flex-1 space-y-1 p-4">
-          {navigation.map(item => (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-secondary-foreground hover:bg-muted hover:text-foreground'
-                )
-              }
-            >
-              <item.icon className="h-5 w-5" />
-              {item.name}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
-    )
-  }
-  // Desktop: fixed sidebar below header
   return (
-    <aside className="fixed left-0 top-16 z-30 mt-4 hidden h-[calc(100vh-4rem)] w-64 flex-col bg-card text-secondary-foreground md:flex">
-      <nav className="flex-1 space-y-1 p-4">
-        {navigation.map(item => (
-          <NavLink
-            key={item.name}
-            to={item.href}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-secondary-foreground hover:bg-muted hover:text-foreground'
-              )
-            }
-          >
-            <item.icon className="h-5 w-5" />
-            {item.name}
-          </NavLink>
-        ))}
-      </nav>
-    </aside>
+    <>
+      {/* Sidebar para desktop */}
+      <aside className="hidden w-64 border-r bg-background md:block">
+        <div className="flex h-16 items-center border-b px-6">
+          <h2 className="text-lg font-semibold">The Post Pilot</h2>
+        </div>
+        <ScrollArea className="h-[calc(100vh-4rem)]">
+          <div className="space-y-1 p-4">
+            {routes.map(route => (
+              <Button
+                key={route.href}
+                variant={location.pathname === route.href ? 'secondary' : 'ghost'}
+                className={cn(
+                  'w-full justify-start gap-2',
+                  location.pathname === route.href && 'bg-secondary'
+                )}
+                onClick={() => navigate(route.href)}
+              >
+                <route.icon className="h-5 w-5" />
+                {route.label}
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
+      </aside>
+
+      {/* Sidebar para mobile */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="md:hidden">
+            <BarChart3 className="h-6 w-6" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 p-0">
+          <div className="flex h-16 items-center border-b px-6">
+            <h2 className="text-lg font-semibold">The Post Pilot</h2>
+          </div>
+          <ScrollArea className="h-[calc(100vh-4rem)]">
+            <div className="space-y-1 p-4">
+              {routes.map(route => (
+                <Button
+                  key={route.href}
+                  variant={location.pathname === route.href ? 'secondary' : 'ghost'}
+                  className={cn(
+                    'w-full justify-start gap-2',
+                    location.pathname === route.href && 'bg-secondary'
+                  )}
+                  onClick={() => navigate(route.href)}
+                >
+                  <route.icon className="h-5 w-5" />
+                  {route.label}
+                </Button>
+              ))}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
