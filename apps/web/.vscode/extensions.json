@@ -1,0 +1,26 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "christian-kohler.npm-intellisense",
+    "ms-vscode.vscode-typescript-next",
+    "streetsidesoftware.code-spell-checker",
+    "naumovs.color-highlight",
+    "yoavbls.pretty-ts-errors",
+    "mikestead.dotenv",
+    "eamodio.gitlens",
+    "gruntfuggly.todo-tree",
+    "wix.vscode-import-cost",
+    "mrmlnc.vscode-attrs-sorter",
+    "mrmlnc.vscode-duplicate",
+    "mikestead.dotenv",
+    "eamodio.gitlens",
+    "gruntfuggly.todo-tree",
+    "wix.vscode-import-cost",
+    "mrmlnc.vscode-attrs-sorter",
+    "mrmlnc.vscode-duplicate"
+  ]
+} 
