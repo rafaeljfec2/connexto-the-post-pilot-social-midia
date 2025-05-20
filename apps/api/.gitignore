@@ -31,3 +31,4 @@ go.work
 # OS
 .DS_Store
 Thumbs.db 
+*__debug_bin*

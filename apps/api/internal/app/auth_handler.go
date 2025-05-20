@@ -3,6 +3,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -498,7 +499,7 @@ func (h *AuthHandler) LinkedInPublishURL(c *fiber.Ctx) error {
 	if clientID == "" || redirectURI == "" {
 		return c.Status(500).JSON(map[string]interface{}{"error": "LinkedIn client ID or redirect URI not configured"})
 	}
-	scopes := "w_member_social"
+	scopes := "openid profile email w_member_social"
 
 	authURL := fmt.Sprintf(
 		"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&state=%s",
@@ -538,11 +539,11 @@ func (h *AuthHandler) LinkedInPublishCallback(c *fiber.Ctx) error {
 	redirectURI := os.Getenv("LINKEDIN_PUBLISH_REDIRECT_URI")
 
 	token, err := exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI)
-	if err != nil || token == "" {
-		return c.Status(404).JSON(map[string]interface{}{"error": "Failed to get access token from LinkedIn", "details": err.Error()})
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to get access token from LinkedIn", "details": err.Error()})
 	}
 	if token == "" {
-		return c.Status(404).JSON(map[string]interface{}{"error": "Failed to get access token from LinkedIn. Token is empty."})
+		return c.Status(400).JSON(map[string]interface{}{"error": "Invalid access token from LinkedIn. Token is empty."})
 	}
 
 	user, err := h.AuthService.GetUserByID(c.Context(), userId)
@@ -550,11 +551,42 @@ func (h *AuthHandler) LinkedInPublishCallback(c *fiber.Ctx) error {
 		return c.Status(404).JSON(map[string]interface{}{"error": "User not found"})
 	}
 
+	// Buscar URN do usuário no LinkedIn
+	personUrn, err := fetchLinkedInPersonURN(token)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to fetch LinkedIn person URN", "details": err.Error()})
+	}
 	user.LinkedinAccessToken = token
+	user.LinkedinPersonUrn = personUrn
 	err = h.AuthService.UpdateUser(c.Context(), user)
 	if err != nil {
 		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to save LinkedIn token", "details": err.Error()})
 	}
 
 	return c.JSON(map[string]string{"status": "ok"})
+}
+
+func fetchLinkedInPersonURN(accessToken string) (string, error) {
+	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/userinfo", nil)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("LinkedIn /v2/userinfo response:", string(body)) // Log para depuração
+	var data struct {
+		Sub string `json:"sub"`
+	}
+	if err := json.Unmarshal(body, &data); err != nil {
+		return "", err
+	}
+
+	if data.Sub == "" {
+		return "", errors.New("invalid LinkedIn userinfo response. Sub is empty.")
+	}
+
+	return "urn:li:person:" + data.Sub, nil
 }

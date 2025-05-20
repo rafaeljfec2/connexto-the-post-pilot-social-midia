@@ -43,6 +43,7 @@ type User struct {
 	OpenAiModel          string             `bson:"openAiModel,omitempty" json:"openAiModel,omitempty"`
 	LinkedinAccessToken  string             `bson:"linkedinAccessToken,omitempty" json:"linkedinAccessToken,omitempty"`
 	LinkedinRefreshToken string             `bson:"linkedinRefreshToken,omitempty" json:"linkedinRefreshToken,omitempty"`
+	LinkedinPersonUrn    string             `bson:"linkedinPersonUrn,omitempty" json:"linkedinPersonUrn,omitempty"`
 	DataSources          []DataSource       `bson:"dataSources,omitempty" json:"dataSources,omitempty"`
 	CreatedAt            time.Time          `bson:"createdAt" json:"createdAt" example:"2024-01-01T00:00:00Z"`
 	UpdatedAt            time.Time          `bson:"updatedAt" json:"updatedAt" example:"2024-01-01T00:00:00Z"`
