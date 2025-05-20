@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useForm, useFieldArray } from 'react-hook-form'
+import { useAuth } from '@/hooks/useAuth'
+import { useEffect } from 'react'
 
 interface SettingsFormValues {
   openaiApiKey: string
@@ -13,18 +15,41 @@ interface SettingsFormValues {
 }
 
 export function Settings() {
+  const { user } = useAuth()
+
   const {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<SettingsFormValues>({
-    defaultValues: { dataSources: [{ url: '' }] },
+    defaultValues: {
+      openaiApiKey: user?.openAiApiKey ?? '',
+      openaiModel: user?.openAiModel ?? '',
+      linkedinClientId: user?.email ?? '',
+      linkedinClientSecret: '',
+      linkedinRedirectUri: '',
+      dataSources: user?.dataSources?.map(ds => ({ url: ds.url ?? '' })) ?? [{ url: '' }],
+    },
   })
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'dataSources',
   })
+
+  // Atualiza o formulário quando o usuário mudar (ex: após login ou reload)
+  useEffect(() => {
+    reset({
+      openaiApiKey: user?.openAiApiKey ?? '',
+      openaiModel: user?.openAiModel ?? '',
+      linkedinClientId: user?.email ?? '',
+      linkedinClientSecret: '',
+      linkedinRedirectUri: '',
+      dataSources: user?.dataSources?.map(ds => ({ url: ds.url ?? '' })) ?? [{ url: '' }],
+    })
+  }, [user, reset])
 
   const onSubmit = (data: SettingsFormValues) => {
     // Aqui você pode salvar as configurações (ex: via API ou localStorage)
@@ -65,46 +90,6 @@ export function Settings() {
                 />
                 {errors.openaiModel && (
                   <span className="text-xs text-destructive">Modelo é obrigatório</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <h2 className="mb-2 text-lg font-semibold">LinkedIn</h2>
-              <div className="space-y-2">
-                <label htmlFor="linkedinClientId" className="block text-sm font-medium">
-                  Client ID
-                </label>
-                <Input
-                  id="linkedinClientId"
-                  placeholder="Seu Client ID do LinkedIn"
-                  {...register('linkedinClientId', { required: true })}
-                />
-                {errors.linkedinClientId && (
-                  <span className="text-xs text-destructive">Client ID é obrigatório</span>
-                )}
-                <label htmlFor="linkedinClientSecret" className="block text-sm font-medium">
-                  Client Secret
-                </label>
-                <Input
-                  id="linkedinClientSecret"
-                  placeholder="Seu Client Secret do LinkedIn"
-                  type="password"
-                  {...register('linkedinClientSecret', { required: true })}
-                  autoComplete="off"
-                />
-                {errors.linkedinClientSecret && (
-                  <span className="text-xs text-destructive">Client Secret é obrigatório</span>
-                )}
-                <label htmlFor="linkedinRedirectUri" className="block text-sm font-medium">
-                  Redirect URI
-                </label>
-                <Input
-                  id="linkedinRedirectUri"
-                  placeholder="https://seuapp.com/auth/linkedin/callback"
-                  {...register('linkedinRedirectUri', { required: true })}
-                />
-                {errors.linkedinRedirectUri && (
-                  <span className="text-xs text-destructive">Redirect URI é obrigatória</span>
                 )}
               </div>
             </div>

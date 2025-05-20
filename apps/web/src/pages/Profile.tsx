@@ -13,19 +13,16 @@ import {
   CheckCircle,
   XCircle,
 } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 
 export function Profile() {
-  // Simulated user data
-  const [user, setUser] = useState({
-    name: 'Rafael Silva',
-    email: 'rafael@email.com',
-    phone: '+55 11 99999-9999',
-    avatar: '',
-  })
+  const { user } = useAuth()
+
+  // Dados sociais simulados (até integração real)
   const [socials, setSocials] = useState({
-    linkedin: true,
+    linkedin: false,
     twitter: false,
-    facebook: true,
+    facebook: false,
     instagram: false,
   })
   const [payment, setPayment] = useState({
@@ -48,21 +45,17 @@ export function Profile() {
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6 md:flex-row md:items-start">
           <Avatar className="h-24 w-24">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback>{user.name[0]}</AvatarFallback>
+            <AvatarImage src={user?.avatarUrl ?? ''} alt={user?.name ?? ''} />
+            <AvatarFallback>{user?.name?.[0] ?? ''}</AvatarFallback>
           </Avatar>
           <div className="w-full flex-1 space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium">Nome</label>
-              <Input value={user.name} readOnly />
+              <Input value={user?.name ?? ''} readOnly />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">E-mail</label>
-              <Input value={user.email} readOnly />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Telefone</label>
-              <Input value={user.phone} readOnly />
+              <Input value={user?.email ?? ''} readOnly />
             </div>
             <Button variant="outline" className="mt-2">
               Editar Perfil

@@ -2,7 +2,6 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { useAuth } from '@/hooks/useAuth'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BarChart3, Clock, FileText, Home, Settings, User, CreditCard } from 'lucide-react'
 
@@ -23,9 +22,9 @@ const routes = [
     href: '/app/history',
   },
   {
-    label: 'Configurações',
-    icon: Settings,
-    href: '/app/settings',
+    label: 'Assinatura',
+    icon: CreditCard,
+    href: '/app/subscription',
   },
   {
     label: 'Perfil',
@@ -33,16 +32,15 @@ const routes = [
     href: '/app/profile',
   },
   {
-    label: 'Assinatura',
-    icon: CreditCard,
-    href: '/app/subscription',
+    label: 'Configurações',
+    icon: Settings,
+    href: '/app/settings',
   },
 ]
 
 export function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { user } = useAuth()
 
   return (
     <>
