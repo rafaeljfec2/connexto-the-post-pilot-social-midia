@@ -35,4 +35,6 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *Ar
 	protected.Put("/me", authHandler.UpdateProfile)
 	protected.Get("/articles/suggestions", articleHandler.GetSuggestions)
 	protected.Post("/posts/generate", postHandler.Generate)
+	protected.Get("/auth/linkedin/publish-url", authHandler.LinkedInPublishURL)
+	protected.Get("/auth/linkedin/publish-callback", authHandler.LinkedInPublishCallback)
 }

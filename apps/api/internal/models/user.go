@@ -32,19 +32,21 @@ type DataSource struct {
 
 // User represents a user in the system
 type User struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	Email        string             `bson:"email" json:"email" example:"john@example.com"`
-	PasswordHash string             `bson:"passwordHash,omitempty" json:"-"`
-	Name         string             `bson:"name" json:"name" example:"John Doe"`
-	AvatarUrl    string             `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty" example:"https://example.com/avatar.jpg"`
-	Provider     AuthProvider       `bson:"provider" json:"provider" example:"local"`
-	ProviderId   string             `bson:"providerId,omitempty" json:"providerId,omitempty" example:"123456789"`
-	OpenAiApiKey string             `bson:"openAiApiKey,omitempty" json:"openAiApiKey,omitempty"`
-	OpenAiModel  string             `bson:"openAiModel,omitempty" json:"openAiModel,omitempty"`
-	DataSources  []DataSource       `bson:"dataSources,omitempty" json:"dataSources,omitempty"`
-	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt    time.Time          `bson:"updatedAt" json:"updatedAt" example:"2024-01-01T00:00:00Z"`
-	LastLogin    *time.Time         `bson:"lastLogin,omitempty" json:"lastLogin,omitempty" example:"2024-01-01T00:00:00Z"`
+	ID                   primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Email                string             `bson:"email" json:"email" example:"john@example.com"`
+	PasswordHash         string             `bson:"passwordHash,omitempty" json:"-"`
+	Name                 string             `bson:"name" json:"name" example:"John Doe"`
+	AvatarUrl            string             `bson:"avatarUrl,omitempty" json:"avatarUrl,omitempty" example:"https://example.com/avatar.jpg"`
+	Provider             AuthProvider       `bson:"provider" json:"provider" example:"local"`
+	ProviderId           string             `bson:"providerId,omitempty" json:"providerId,omitempty" example:"123456789"`
+	OpenAiApiKey         string             `bson:"openAiApiKey,omitempty" json:"openAiApiKey,omitempty"`
+	OpenAiModel          string             `bson:"openAiModel,omitempty" json:"openAiModel,omitempty"`
+	LinkedinAccessToken  string             `bson:"linkedinAccessToken,omitempty" json:"linkedinAccessToken,omitempty"`
+	LinkedinRefreshToken string             `bson:"linkedinRefreshToken,omitempty" json:"linkedinRefreshToken,omitempty"`
+	DataSources          []DataSource       `bson:"dataSources,omitempty" json:"dataSources,omitempty"`
+	CreatedAt            time.Time          `bson:"createdAt" json:"createdAt" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt            time.Time          `bson:"updatedAt" json:"updatedAt" example:"2024-01-01T00:00:00Z"`
+	LastLogin            *time.Time         `bson:"lastLogin,omitempty" json:"lastLogin,omitempty" example:"2024-01-01T00:00:00Z"`
 }
 
 // MarshalJSON implementa a interface json.Marshaler para User

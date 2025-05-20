@@ -101,7 +101,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Google"
                 ],
                 "summary": "Google OpenID Connect callback",
                 "parameters": [
@@ -145,7 +145,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Google"
                 ],
                 "summary": "Get Google consent URL",
                 "responses": {
@@ -175,7 +175,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "LinkedIn"
                 ],
                 "summary": "LinkedIn OpenID Connect callback",
                 "parameters": [
@@ -212,19 +212,75 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/linkedin/url": {
+        "/auth/linkedin/publish-callback": {
             "get": {
-                "description": "Returns the LinkedIn OpenID Connect consent URL for social login",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Handles LinkedIn OAuth callback for publishing, saves access token to user",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "LinkedIn"
                 ],
-                "summary": "Get LinkedIn consent URL",
+                "summary": "LinkedIn publish OAuth callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization code from LinkedIn",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "{ \\\"url\\\": \\\"https://www.linkedin.com/oauth/v2/authorization?...\\\" }",
+                        "description": "Exemplo: {\\\"access_token\\\": \\\"...\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Exemplo: {\\\"error\\\": \\\"Missing code from LinkedIn\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Exemplo: {\\\"error\\\": \\\"Failed to get access token from LinkedIn\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/linkedin/publish-url": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the LinkedIn OAuth URL for publishing posts (w_member_social)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "LinkedIn"
+                ],
+                "summary": "Get LinkedIn publish consent URL",
+                "responses": {
+                    "200": {
+                        "description": "Exemplo: {\\\"url\\\": \\\"https://www.linkedin.com/oauth/v2/authorization?...\\\" }",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -233,7 +289,37 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "{ \\\"error\\\": \\\"LinkedIn client ID or redirect URI not configured\\\" }",
+                        "description": "Exemplo: {\\\"error\\\": \\\"LinkedIn client ID or redirect URI not configured\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/linkedin/url": {
+            "get": {
+                "description": "Returns the LinkedIn OpenID Connect consent URL for social login",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "LinkedIn"
+                ],
+                "summary": "Get LinkedIn consent URL",
+                "responses": {
+                    "200": {
+                        "description": "Exemplo: {\\\"url\\\": \\\"https://www.linkedin.com/oauth/v2/authorization?...\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Exemplo: {\\\"error\\\": \\\"LinkedIn client ID or redirect URI not configured\\\" }",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -252,7 +338,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "User"
                 ],
                 "summary": "Login with email and password",
                 "parameters": [
@@ -293,7 +379,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "User"
                 ],
                 "summary": "Refresh JWT using refresh token",
                 "parameters": [
@@ -334,7 +420,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "User"
                 ],
                 "summary": "Register a new user",
                 "parameters": [
@@ -375,7 +461,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "User"
                 ],
                 "summary": "Login or register with social provider",
                 "parameters": [
@@ -413,7 +499,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "User"
                 ],
                 "summary": "Get authenticated user profile",
                 "responses": {
@@ -453,7 +539,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "User"
                 ],
                 "summary": "Update user profile/configuration",
                 "parameters": [
@@ -776,6 +862,12 @@ const docTemplate = `{
                 "lastLogin": {
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
+                },
+                "linkedinAccessToken": {
+                    "type": "string"
+                },
+                "linkedinRefreshToken": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string",

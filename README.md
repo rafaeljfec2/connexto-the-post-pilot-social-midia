@@ -52,16 +52,17 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
 
 ### Estágio Atual
 
-| Funcionalidade                            | Status      |
-| ----------------------------------------- | ----------- |
-| Autenticação via LinkedIn                 | ✅ Pronto   |
-| Autenticação via Google                   | ✅ Pronto   |
-| Salvar tokens e dados do usuário          | ✅ Pronto   |
-| Buscar tema de fontes técnicas (RSS/APIs) | ✅ Pronto   |
-| Gerar texto com OpenAI                    | ✅ Pronto   |
-| Exibir no painel (botão "Aprovar")        | ⬜ Pendente |
-| Publicar no LinkedIn com click            | ⬜ Pendente |
-| Histórico de posts                        | ⬜ Pendente |
+| Funcionalidade                                | Status      |
+| --------------------------------------------- | ----------- |
+| 1 - Autenticação via LinkedIn                 | ✅ Pronto   |
+| 2 - Autenticação via Google                   | ✅ Pronto   |
+| 3 - Salvar tokens e dados do usuário          | ✅ Pronto   |
+| 4 - Buscar tema de fontes técnicas (RSS/APIs) | ✅ Pronto   |
+| 5 - Gerar texto com OpenAI                    | ✅ Pronto   |
+| 6 - Publicação no LinkedIn                    | ⬜ Pendente |
+| 7 - Exibir no painel (botão "Aprovar")        | ⬜ Pendente |
+| 8 - Publicar no LinkedIn com click            | ⬜ Pendente |
+| 9 - Histórico de posts                        | ⬜ Pendente |
 
 ### Detalhes Técnicos Implementados
 

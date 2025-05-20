@@ -38,7 +38,7 @@ type registerRequest struct {
 // Register godoc
 // @Summary Register a new user
 // @Description Register a new user with name, email and password
-// @Tags Auth
+// @Tags User
 // @Accept json
 // @Produce json
 // @Param input body registerRequest true "User registration info"
@@ -72,7 +72,7 @@ type loginResponse struct {
 // Login godoc
 // @Summary Login with email and password
 // @Description Authenticate user with email and password
-// @Tags Auth
+// @Tags User
 // @Accept json
 // @Produce json
 // @Param input body loginRequest true "Login info"
@@ -105,7 +105,7 @@ type socialLoginRequest struct {
 // SocialLogin godoc
 // @Summary Login or register with social provider
 // @Description Authenticate or register user with social provider (Google, LinkedIn)
-// @Tags Auth
+// @Tags User
 // @Accept json
 // @Produce json
 // @Param input body socialLoginRequest true "Social login info"
@@ -134,7 +134,7 @@ type refreshResponse struct {
 // RefreshToken godoc
 // @Summary Refresh JWT using refresh token
 // @Description Get a new JWT token using a valid refresh token
-// @Tags Auth
+// @Tags User
 // @Accept json
 // @Produce json
 // @Param input body refreshRequest true "Refresh token info"
@@ -162,7 +162,7 @@ type updateProfileRequest struct {
 // UpdateProfile godoc
 // @Summary Update user profile/configuration
 // @Description Update OpenAI and data sources for the authenticated user
-// @Tags Auth
+// @Tags User
 // @Accept json
 // @Produce json
 // @Param input body app.updateProfileRequest true "Profile update info" example({"openAiApiKey":"sk-...","openAiModel":"gpt-4","dataSources":[{"type":"rss","url":"https://martinfowler.com/feed.atom","tags":["architecture","ai"]},{"type":"devto","url":"https://dev.to","tags":["backend","cloud"]}]})
@@ -210,7 +210,7 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 // GetProfile godoc
 // @Summary Get authenticated user profile
 // @Description Returns the full user object for the authenticated user
-// @Tags Auth
+// @Tags User
 // @Produce json
 // @Success 200 {object} models.User "Exemplo de resposta: {\"id\":\"123\",\"name\":\"João Silva\",\"email\":\"joao@exemplo.com\",\"avatarUrl\":\"https://exemplo.com/avatar.jpg\",\"provider\":\"google\",\"providerId\":\"abc123\",\"openAiApiKey\":\"sk-...\",\"openAiModel\":\"gpt-4\",\"dataSources\":[{\"type\":\"rss\",\"url\":\"https://martinfowler.com/feed.atom\",\"tags\":[\"architecture\",\"ai\"]}],\"createdAt\":\"2024-01-01T00:00:00Z\",\"updatedAt\":\"2024-01-01T00:00:00Z\"}"
 // @Failure 401 {object} map[string]interface{}
@@ -232,10 +232,10 @@ func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
 // LinkedInAuthURL godoc
 // @Summary Get LinkedIn consent URL
 // @Description Returns the LinkedIn OpenID Connect consent URL for social login
-// @Tags Auth
+// @Tags LinkedIn
 // @Produce json
-// @Success 200 {object} map[string]string "{ \"url\": \"https://www.linkedin.com/oauth/v2/authorization?...\" }"
-// @Failure 500 {object} map[string]interface{} "{ \"error\": \"LinkedIn client ID or redirect URI not configured\" }"
+// @Success 200 {object} map[string]string "Exemplo: {\"url\": \"https://www.linkedin.com/oauth/v2/authorization?...\" }"
+// @Failure 500 {object} map[string]interface{} "Exemplo: {\"error\": \"LinkedIn client ID or redirect URI not configured\" }"
 // @Router /auth/linkedin/url [get]
 func (h *AuthHandler) LinkedInAuthURL(c *fiber.Ctx) error {
 	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
@@ -270,7 +270,7 @@ type linkedinEmailResponse struct {
 // LinkedInCallback godoc
 // @Summary LinkedIn OpenID Connect callback
 // @Description Handles LinkedIn OpenID Connect callback, authenticates or creates user, returns JWT and user object
-// @Tags Auth
+// @Tags LinkedIn
 // @Produce json
 // @Param code query string true "Authorization code from LinkedIn"
 // @Success 200 {object} map[string]interface{} "{ \"user\": { ... }, \"token\": \"...\" }"
@@ -365,7 +365,7 @@ func exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI stri
 // GoogleAuthURL godoc
 // @Summary Get Google consent URL
 // @Description Returns the Google OpenID Connect consent URL for social login
-// @Tags Auth
+// @Tags Google
 // @Produce json
 // @Success 200 {object} map[string]string "{ \"url\": \"https://accounts.google.com/o/oauth2/v2/auth?...\" }"
 // @Failure 500 {object} map[string]interface{} "{ \"error\": \"Google client ID or redirect URI not configured\" }"
@@ -389,7 +389,7 @@ func (h *AuthHandler) GoogleAuthURL(c *fiber.Ctx) error {
 // GoogleCallback godoc
 // @Summary Google OpenID Connect callback
 // @Description Handles Google OpenID Connect callback, authenticates or creates user, returns JWT and user object
-// @Tags Auth
+// @Tags Google
 // @Produce json
 // @Param code query string true "Authorization code from Google"
 // @Success 200 {object} map[string]interface{} "{ \"user\": { ... }, \"token\": \"...\" }"
@@ -481,4 +481,80 @@ func fetchGoogleUserInfo(token string) (*googleUserInfo, error) {
 		return nil, err
 	}
 	return &userInfo, nil
+}
+
+// Gera URL de consentimento para publicação no LinkedIn
+// @Summary Get LinkedIn publish consent URL
+// @Description Returns the LinkedIn OAuth URL for publishing posts (w_member_social)
+// @Tags LinkedIn
+// @Produce json
+// @Success 200 {object} map[string]string "Exemplo: {\"url\": \"https://www.linkedin.com/oauth/v2/authorization?...\" }"
+// @Failure 500 {object} map[string]interface{} "Exemplo: {\"error\": \"LinkedIn client ID or redirect URI not configured\" }"
+// @Security BearerAuth
+// @Router /auth/linkedin/publish-url [get]
+func (h *AuthHandler) LinkedInPublishURL(c *fiber.Ctx) error {
+	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
+	redirectURI := os.Getenv("LINKEDIN_PUBLISH_REDIRECT_URI")
+	if clientID == "" || redirectURI == "" {
+		return c.Status(500).JSON(map[string]interface{}{"error": "LinkedIn client ID or redirect URI not configured"})
+	}
+	scopes := "w_member_social"
+
+	authURL := fmt.Sprintf(
+		"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&state=%s",
+		url.QueryEscape(clientID),
+		url.QueryEscape(redirectURI),
+		scopes,
+		"publish", // pode ser randomizado para produção
+	)
+	return c.JSON(map[string]string{"url": authURL})
+}
+
+// Callback para salvar o access token de publicação
+// @Summary LinkedIn publish OAuth callback
+// @Description Handles LinkedIn OAuth callback for publishing, saves access token to user
+// @Tags LinkedIn
+// @Produce json
+// @Param code query string true "Authorization code from LinkedIn"
+// @Success 200 {object} map[string]string "Exemplo: {\"access_token\": \"...\" }"
+// @Failure 400 {object} map[string]interface{} "Exemplo: {\"error\": \"Missing code from LinkedIn\" }"
+// @Failure 500 {object} map[string]interface{} "Exemplo: {\"error\": \"Failed to get access token from LinkedIn\" }"
+// @Security BearerAuth
+// @Router /auth/linkedin/publish-callback [get]
+func (h *AuthHandler) LinkedInPublishCallback(c *fiber.Ctx) error {
+	claims := c.Locals("user").(jwt.MapClaims)
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		return c.Status(401).JSON(map[string]interface{}{"error": "Invalid user claims"})
+	}
+
+	code := c.Query("code")
+	if code == "" {
+		return c.Status(400).JSON(map[string]interface{}{"error": "Missing code from LinkedIn"})
+	}
+
+	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
+	clientSecret := os.Getenv("LINKEDIN_CLIENT_SECRET")
+	redirectURI := os.Getenv("LINKEDIN_PUBLISH_REDIRECT_URI")
+
+	token, err := exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI)
+	if err != nil || token == "" {
+		return c.Status(404).JSON(map[string]interface{}{"error": "Failed to get access token from LinkedIn", "details": err.Error()})
+	}
+	if token == "" {
+		return c.Status(404).JSON(map[string]interface{}{"error": "Failed to get access token from LinkedIn. Token is empty."})
+	}
+
+	user, err := h.AuthService.GetUserByID(c.Context(), userId)
+	if err != nil || user == nil {
+		return c.Status(404).JSON(map[string]interface{}{"error": "User not found"})
+	}
+
+	user.LinkedinAccessToken = token
+	err = h.AuthService.UpdateUser(c.Context(), user)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to save LinkedIn token", "details": err.Error()})
+	}
+
+	return c.JSON(map[string]string{"status": "ok"})
 }

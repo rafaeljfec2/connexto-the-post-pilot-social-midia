@@ -144,6 +144,10 @@ definitions:
       lastLogin:
         example: "2024-01-01T00:00:00Z"
         type: string
+      linkedinAccessToken:
+        type: string
+      linkedinRefreshToken:
+        type: string
       name:
         example: John Doe
         type: string
@@ -272,7 +276,7 @@ paths:
             type: object
       summary: Google OpenID Connect callback
       tags:
-      - Auth
+      - Google
   /auth/google/url:
     get:
       description: Returns the Google OpenID Connect consent URL for social login
@@ -294,7 +298,7 @@ paths:
             type: object
       summary: Get Google consent URL
       tags:
-      - Auth
+      - Google
   /auth/linkedin/callback:
     get:
       description: Handles LinkedIn OpenID Connect callback, authenticates or creates
@@ -326,7 +330,66 @@ paths:
             type: object
       summary: LinkedIn OpenID Connect callback
       tags:
-      - Auth
+      - LinkedIn
+  /auth/linkedin/publish-callback:
+    get:
+      description: Handles LinkedIn OAuth callback for publishing, saves access token
+        to user
+      parameters:
+      - description: Authorization code from LinkedIn
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Exemplo: {\"access_token\": \"...\" }'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'Exemplo: {\"error\": \"Missing code from LinkedIn\" }'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 'Exemplo: {\"error\": \"Failed to get access token from LinkedIn\"
+            }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: LinkedIn publish OAuth callback
+      tags:
+      - LinkedIn
+  /auth/linkedin/publish-url:
+    get:
+      description: Returns the LinkedIn OAuth URL for publishing posts (w_member_social)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Exemplo: {\"url\": \"https://www.linkedin.com/oauth/v2/authorization?...\"
+            }'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 'Exemplo: {\"error\": \"LinkedIn client ID or redirect URI
+            not configured\" }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get LinkedIn publish consent URL
+      tags:
+      - LinkedIn
   /auth/linkedin/url:
     get:
       description: Returns the LinkedIn OpenID Connect consent URL for social login
@@ -334,21 +397,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: '{ \"url\": \"https://www.linkedin.com/oauth/v2/authorization?...\"
+          description: 'Exemplo: {\"url\": \"https://www.linkedin.com/oauth/v2/authorization?...\"
             }'
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: '{ \"error\": \"LinkedIn client ID or redirect URI not configured\"
-            }'
+          description: 'Exemplo: {\"error\": \"LinkedIn client ID or redirect URI
+            not configured\" }'
           schema:
             additionalProperties: true
             type: object
       summary: Get LinkedIn consent URL
       tags:
-      - Auth
+      - LinkedIn
   /auth/login:
     post:
       consumes:
@@ -375,7 +438,7 @@ paths:
             type: object
       summary: Login with email and password
       tags:
-      - Auth
+      - User
   /auth/refresh:
     post:
       consumes:
@@ -402,7 +465,7 @@ paths:
             type: object
       summary: Refresh JWT using refresh token
       tags:
-      - Auth
+      - User
   /auth/register:
     post:
       consumes:
@@ -429,7 +492,7 @@ paths:
             type: object
       summary: Register a new user
       tags:
-      - Auth
+      - User
   /auth/social:
     post:
       consumes:
@@ -456,7 +519,7 @@ paths:
             type: object
       summary: Login or register with social provider
       tags:
-      - Auth
+      - User
   /me:
     get:
       description: Returns the full user object for the authenticated user
@@ -479,7 +542,7 @@ paths:
             type: object
       summary: Get authenticated user profile
       tags:
-      - Auth
+      - User
     put:
       consumes:
       - application/json
@@ -522,7 +585,7 @@ paths:
       - BearerAuth: []
       summary: Update user profile/configuration
       tags:
-      - Auth
+      - User
   /posts/generate:
     post:
       consumes:
