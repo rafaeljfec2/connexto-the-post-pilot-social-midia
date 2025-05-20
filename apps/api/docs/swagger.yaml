@@ -36,6 +36,11 @@ definitions:
       user:
         $ref: '#/definitions/models.User'
     type: object
+  app.publishLinkedInPostRequest:
+    properties:
+      text:
+        type: string
+    type: object
   app.refreshRequest:
     properties:
       refreshToken:
@@ -145,6 +150,8 @@ definitions:
         example: "2024-01-01T00:00:00Z"
         type: string
       linkedinAccessToken:
+        type: string
+      linkedinPersonUrn:
         type: string
       linkedinRefreshToken:
         type: string
@@ -520,6 +527,47 @@ paths:
       summary: Login or register with social provider
       tags:
       - User
+  /linkedin/publish:
+    post:
+      consumes:
+      - application/json
+      description: Publishes a post on LinkedIn for the authenticated user
+      parameters:
+      - description: Post content
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/app.publishLinkedInPostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Exemplo: {\"status\": \"published\", \"linkedinPostId\": \"urn:li:share:...\"
+            }'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'Exemplo: {\"error\": \"Missing text\" }'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Exemplo: {\"error\": \"Unauthorized\" }'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 'Exemplo: {\"error\": \"Failed to publish on LinkedIn\" }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Publish a post on LinkedIn
+      tags:
+      - LinkedIn
   /me:
     get:
       description: Returns the full user object for the authenticated user

@@ -73,3 +73,45 @@ type generatePostResponse struct {
 	CreatedAt     string                 `json:"createdAt"`
 	LogId         string                 `json:"logId"`
 }
+
+type publishLinkedInPostRequest struct {
+	Text string `json:"text"`
+}
+
+// PublishLinkedInPost godoc
+// @Summary Publish a post on LinkedIn
+// @Description Publishes a post on LinkedIn for the authenticated user
+// @Tags LinkedIn
+// @Accept json
+// @Produce json
+// @Param input body publishLinkedInPostRequest true "Post content"
+// @Success 200 {object} map[string]interface{} "Exemplo: {\"status\": \"published\", \"linkedinPostId\": \"urn:li:share:...\" }"
+// @Failure 400 {object} map[string]interface{} "Exemplo: {\"error\": \"Missing text\" }"
+// @Failure 401 {object} map[string]interface{} "Exemplo: {\"error\": \"Unauthorized\" }"
+// @Failure 500 {object} map[string]interface{} "Exemplo: {\"error\": \"Failed to publish on LinkedIn\" }"
+// @Security BearerAuth
+// @Router /linkedin/publish [post]
+func (h *PostHandler) PublishLinkedInPost(c *fiber.Ctx) error {
+	claims := c.Locals("user").(jwt.MapClaims)
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		return c.Status(401).JSON(map[string]interface{}{"error": "Invalid user claims"})
+	}
+	var req publishLinkedInPostRequest
+	if err := c.BodyParser(&req); err != nil || req.Text == "" {
+		return c.Status(400).JSON(map[string]interface{}{"error": "Missing text"})
+	}
+	user, err := h.AuthService.GetUserByID(c.Context(), userId)
+	if err != nil || user == nil {
+		return c.Status(404).JSON(map[string]interface{}{"error": "User not found"})
+	}
+	if user.LinkedinAccessToken == "" || user.LinkedinPersonUrn == "" {
+		return c.Status(400).JSON(map[string]interface{}{"error": "LinkedIn not connected for this user"})
+	}
+	// Chamar serviço de publicação (a ser implementado)
+	linkedinPostId, err := h.PostService.PublishOnLinkedIn(c.Context(), user.LinkedinAccessToken, user.LinkedinPersonUrn, req.Text)
+	if err != nil {
+		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to publish on LinkedIn", "details": err.Error()})
+	}
+	return c.JSON(map[string]interface{}{"status": "published", "linkedinPostId": linkedinPostId})
+}

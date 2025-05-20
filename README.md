@@ -41,28 +41,54 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
 
 ### Funcionalidades do MVP
 
-- **Autenticação via LinkedIn (OpenID Connect)**
-- **Autenticação via Google (OpenID Connect)**
-- **Salvamento de tokens e dados do usuário** (incluindo OpenAI)
-- **Estrutura para fontes técnicas** (RSS, dev.to, Medium, Hacker News)
-- **Geração de texto com OpenAI**
-- **Exibição de sugestões no painel com botão "Aprovar"** _(em breve)_
-- **Publicação no LinkedIn com 1 click** _(em breve)_
-- **Histórico de posts** _(em breve)_
+#### Backend
+
+- Autenticação via LinkedIn (OpenID Connect)
+- Autenticação via Google (OpenID Connect)
+- Salvamento de tokens e dados do usuário (incluindo OpenAI)
+- Estrutura para fontes técnicas (RSS, dev.to, Medium, Hacker News)
+- Geração de texto com OpenAI
+- Publicação no LinkedIn
+- Histórico genérico de posts (SocialPostStories)
+- Logging e auditoria de geração/publicação
+- API RESTful documentada (Swagger)
+- Tratamento de token expirado/inválido
+
+#### Frontend
+
+- Dashboard com sugestões de temas/artigos
+- Editor de posts
+- Aprovação de sugestões (botão "Aprovar")
+- Publicação no LinkedIn com 1 click
+- Visualização do histórico de posts
+- Configuração de fontes técnicas
+- Login social (Google/LinkedIn)
+- Exibição de mensagens de erro e feedback ao usuário
 
 ### Estágio Atual
 
-| Funcionalidade                                | Status      |
-| --------------------------------------------- | ----------- |
-| 1 - Autenticação via LinkedIn                 | ✅ Pronto   |
-| 2 - Autenticação via Google                   | ✅ Pronto   |
-| 3 - Salvar tokens e dados do usuário          | ✅ Pronto   |
-| 4 - Buscar tema de fontes técnicas (RSS/APIs) | ✅ Pronto   |
-| 5 - Gerar texto com OpenAI                    | ✅ Pronto   |
-| 6 - Publicação no LinkedIn                    | ⬜ Pendente |
-| 7 - Exibir no painel (botão "Aprovar")        | ⬜ Pendente |
-| 8 - Publicar no LinkedIn com click            | ⬜ Pendente |
-| 9 - Histórico de posts                        | ⬜ Pendente |
+| Funcionalidade (Backend)                      | Status    |
+| --------------------------------------------- | --------- |
+| 1 - Autenticação via LinkedIn                 | ✅ Pronto |
+| 2 - Autenticação via Google                   | ✅ Pronto |
+| 3 - Salvar tokens e dados do usuário          | ✅ Pronto |
+| 4 - Buscar tema de fontes técnicas (RSS/APIs) | ✅ Pronto |
+| 5 - Gerar texto com OpenAI                    | ✅ Pronto |
+| 6 - Publicação no LinkedIn                    | ✅ Pronto |
+| 7 - Histórico de posts                        | ✅ Pronto |
+| 8 - Logging/auditoria                         | ✅ Pronto |
+| 9 - Tratamento de token expirado/inválido     | ✅ Pronto |
+
+| Funcionalidade (Frontend)              | Status      |
+| -------------------------------------- | ----------- |
+| 1 - Dashboard com sugestões            | ⬜ Pendente |
+| 2 - Editor de posts                    | ⬜ Pendente |
+| 3 - Aprovação de sugestões             | ⬜ Pendente |
+| 4 - Publicação no LinkedIn com 1 click | ⬜ Pendente |
+| 5 - Visualização do histórico de posts | ⬜ Pendente |
+| 6 - Configuração de fontes técnicas    | ⬜ Pendente |
+| 7 - Login social (Google/LinkedIn)     | ⬜ Pendente |
+| 8 - Mensagens de erro e feedback       | ⬜ Pendente |
 
 ### Detalhes Técnicos Implementados
 
@@ -117,6 +143,49 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
    - Escrita de posts
    - Agendamento
    - Métricas de engajamento
+
+### Histórico Genérico de Publicações
+
+- Todos os posts publicados (sucesso ou erro) em qualquer rede social são registrados na coleção `social_post_stories`.
+- Campos: usuário, rede, conteúdo, payload, resposta, status, erro, ID externo, timestamps.
+- Permite auditoria, reprocessamento e análise de falhas.
+
+### Tratamento de Token Expirado/Inválido
+
+- Se o token do LinkedIn expirar ou for revogado, o backend retorna:
+  `{"error": "LinkedIn token expired or invalid. Please reconnect your LinkedIn account."}`
+- O frontend pode instruir o usuário a refazer o OAuth.
+
+### Exemplo de uso: Publicação no LinkedIn
+
+**Endpoint:**
+
+```
+POST /the-post-pilot/v1/linkedin/publish
+Authorization: Bearer <jwt>
+Content-Type: application/json
+
+{
+  "text": "Conteúdo do post para o LinkedIn"
+}
+```
+
+**Resposta de sucesso:**
+
+```
+{
+  "status": "published",
+  "linkedinPostId": "urn:li:share:..."
+}
+```
+
+**Resposta de erro (token expirado):**
+
+```
+{
+  "error": "LinkedIn token expired or invalid. Please reconnect your LinkedIn account."
+}
+```
 
 ---
 

@@ -492,6 +492,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/linkedin/publish": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Publishes a post on LinkedIn for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "LinkedIn"
+                ],
+                "summary": "Publish a post on LinkedIn",
+                "parameters": [
+                    {
+                        "description": "Post content",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/app.publishLinkedInPostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Exemplo: {\\\"status\\\": \\\"published\\\", \\\"linkedinPostId\\\": \\\"urn:li:share:...\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Exemplo: {\\\"error\\\": \\\"Missing text\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Exemplo: {\\\"error\\\": \\\"Unauthorized\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Exemplo: {\\\"error\\\": \\\"Failed to publish on LinkedIn\\\" }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/me": {
             "get": {
                 "description": "Returns the full user object for the authenticated user",
@@ -707,6 +768,14 @@ const docTemplate = `{
                 }
             }
         },
+        "app.publishLinkedInPostRequest": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
         "app.refreshRequest": {
             "type": "object",
             "properties": {
@@ -864,6 +933,9 @@ const docTemplate = `{
                     "example": "2024-01-01T00:00:00Z"
                 },
                 "linkedinAccessToken": {
+                    "type": "string"
+                },
+                "linkedinPersonUrn": {
                     "type": "string"
                 },
                 "linkedinRefreshToken": {
