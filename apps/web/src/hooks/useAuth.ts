@@ -1,38 +1,58 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import {
-  authService,
-  type User,
-  type AuthResponse,
-  type LoginCredentials,
-} from '@/services/auth.service'
+import { useEffect } from 'react'
+import { authService, User, type LoginCredentials } from '@/services/auth.service'
+import { useAuthStore } from '@/stores/auth'
+import { authUtils } from '@/utils/auth'
 
 export function useAuth() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { user, setUser, setToken } = useAuthStore()
 
-  // Query para obter usuário atual
-  const { data: user, isLoading: isLoadingUser } = useQuery({
+  const token = authUtils.getToken()
+  const { data: userData, isLoading: isLoadingUser } = useQuery<User>({
     queryKey: ['user'],
-    queryFn: authService.getCurrentUser,
+    queryFn: () => {
+      console.log('Buscando /me')
+      return authService.getCurrentUser()
+    },
+    enabled: !!token,
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5,
   })
 
-  // Mutation para login com email/senha
+  // Sincronizar Zustand com resultado do useQuery
+  useEffect(() => {
+    if (isLoadingUser) return // Não limpe o Zustand enquanto está carregando
+    if (userData) {
+      setUser(userData)
+      setToken(authUtils.getToken() ?? '')
+    } else {
+      setUser(null)
+      setToken(null)
+    }
+  }, [userData, isLoadingUser, setUser, setToken])
+
   const login = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
       const response = await authService.login(credentials)
       authService.setToken(response.token)
+      setToken(response.token)
+      setUser(response.user)
+      authUtils.setToken(response.token)
+      authUtils.setUser(response.user)
+      queryClient.setQueryData(['user'], response.user)
       return response.user
     },
-    onSuccess: user => {
-      queryClient.setQueryData(['user'], user)
+    onSuccess: async () => {
+      // Invalida e refaz a query do usuário para garantir que /me seja chamado
+      await queryClient.invalidateQueries({ queryKey: ['user'] })
+      await queryClient.refetchQueries({ queryKey: ['user'] })
       navigate('/app')
     },
   })
 
-  // Mutation para login com Google
   const googleLogin = useMutation({
     mutationFn: async () => {
       const url = await authService.getGoogleConsentUrl()
@@ -40,7 +60,6 @@ export function useAuth() {
     },
   })
 
-  // Mutation para login com LinkedIn
   const linkedInLogin = useMutation({
     mutationFn: async () => {
       const url = await authService.getLinkedInConsentUrl()
@@ -48,62 +67,71 @@ export function useAuth() {
     },
   })
 
-  // Mutation para callback do Google
   const handleGoogleCallback = useMutation({
     mutationFn: async (code: string) => {
       const response = await authService.handleGoogleCallback(code)
       authService.setToken(response.token)
+      setToken(response.token)
+      setUser(response.user)
+      authUtils.setToken(response.token)
+      authUtils.setUser(response.user)
+      queryClient.setQueryData(['user'], response.user)
       return response.user
     },
-    onSuccess: user => {
-      queryClient.setQueryData(['user'], user)
+    onSuccess: () => {
       navigate('/app')
     },
   })
 
-  // Mutation para callback do LinkedIn
   const handleLinkedInCallback = useMutation({
     mutationFn: async (code: string) => {
       const response = await authService.handleLinkedInCallback(code)
       authService.setToken(response.token)
+      setToken(response.token)
+      setUser(response.user)
+      authUtils.setToken(response.token)
+      authUtils.setUser(response.user)
+      queryClient.setQueryData(['user'], response.user)
       return response.user
     },
-    onSuccess: user => {
-      queryClient.setQueryData(['user'], user)
+    onSuccess: () => {
       navigate('/app')
     },
   })
 
-  // Mutation para callback de publicação do LinkedIn
   const handleLinkedInPublishCallback = useMutation({
     mutationFn: async (code: string) => {
       const response = await authService.handleLinkedInPublishCallback(code)
-      // Atualiza o usuário com o novo token do LinkedIn
       const updatedUser = await queryClient.fetchQuery({
         queryKey: ['user'],
         queryFn: authService.getCurrentUser,
       })
       if (updatedUser) {
+        setUser({ ...updatedUser, linkedinAccessToken: response.access_token })
+        authUtils.setUser({ ...updatedUser, linkedinAccessToken: response.access_token })
         queryClient.setQueryData(['user'], {
           ...updatedUser,
-          linkedinToken: response.access_token,
+          linkedinAccessToken: response.access_token,
         })
       }
       return response
     },
   })
 
-  // Função de logout
   const logout = () => {
     authService.removeToken()
-    queryClient.clear()
+    authUtils.clearAuth()
+    setUser(null)
+    setToken(null)
+    queryClient.cancelQueries({ queryKey: ['user'] })
+    queryClient.removeQueries({ queryKey: ['user'] })
     navigate('/login')
   }
 
   return {
     user,
-    isLoadingUser,
     isAuthenticated: !!user,
+    isLoadingUser,
     login: login.mutate,
     isLoggingIn: login.isPending,
     googleLogin: googleLogin.mutate,

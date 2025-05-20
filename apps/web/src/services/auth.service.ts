@@ -1,4 +1,5 @@
 import { api } from '@/lib/axios'
+import { authUtils } from '@/utils/auth'
 
 export type AuthProvider = 'local' | 'google' | 'linkedin'
 
@@ -54,7 +55,7 @@ class AuthService {
       callback: '/the-post-pilot/v1/auth/linkedin/callback',
       publishCallback: '/the-post-pilot/v1/auth/linkedin/publish-callback',
     },
-    me: '/the-post-pilot/v1/auth/me',
+    me: '/the-post-pilot/v1/me',
   }
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -115,3 +116,9 @@ class AuthService {
 }
 
 export const authService = new AuthService()
+
+// Bloco de inicialização para manter o token no axios após reload
+const token = authUtils.getToken()
+if (token) {
+  authService.setToken(token)
+}

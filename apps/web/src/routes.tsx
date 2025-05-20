@@ -12,10 +12,15 @@ import { Subscription } from '@/pages/Subscription'
 import { PrivateRoute } from '@/components/PrivateRoute'
 import { Dashboard } from '@/pages/Dashboard'
 import { RootLayout } from '@/components/RootLayout'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export const router = createBrowserRouter([
   {
-    element: <RootLayout />,
+    element: (
+      <AuthProvider>
+        <RootLayout />
+      </AuthProvider>
+    ),
     children: [
       {
         path: '/',

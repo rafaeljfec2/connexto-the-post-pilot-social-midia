@@ -1,11 +1,11 @@
-import { createContext, useContext, ReactNode } from 'react'
+import { createContext, useContext, ReactNode, useMemo } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import type { User } from '@/services/auth.service'
+import { useAuthStore } from '@/stores/auth'
 
 interface AuthContextType {
-  user: User | null
-  isLoadingUser: boolean
+  user: any
   isAuthenticated: boolean
+  isLoadingUser: boolean
   googleLogin: () => void
   linkedInLogin: () => void
   handleGoogleCallback: (code: string) => void
@@ -16,10 +16,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const auth = useAuth()
+  const zustandUser = useAuthStore(state => state.user)
 
-  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>
+  const contextValue = useMemo(
+    () => ({
+      ...auth,
+      user: zustandUser,
+      isAuthenticated: !!zustandUser,
+      isLoadingUser: (auth as any).isLoadingUser,
+    }),
+    [auth, zustandUser]
+  )
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 }
 
 export function useAuthContext() {
