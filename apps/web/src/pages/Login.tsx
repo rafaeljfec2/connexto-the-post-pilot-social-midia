@@ -14,7 +14,6 @@ import { SiLinkedin } from 'react-icons/si'
 import { useQueryClient } from '@tanstack/react-query'
 import { authUtils } from '@/utils/auth'
 import { useAuthStore } from '@/stores/auth'
-import { api } from '@/lib/axios'
 import { clearUserData } from '@/utils/clearUserData'
 import { authService } from '@/services/auth.service'
 
@@ -24,6 +23,7 @@ const loginSchema = z.object({
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
+type AuthProvider = 'google' | 'linkedin'
 
 export function Login() {
   const [searchParams] = useSearchParams()
@@ -54,74 +54,72 @@ export function Login() {
     resolver: zodResolver(loginSchema),
   })
 
+  const handleAuthError = (error: unknown, provider?: AuthProvider) => {
+    console.error('Erro na autenticação:', error)
+    const errorMessage =
+      error instanceof Error ? error.message : 'Não foi possível autenticar. Tente novamente.'
+
+    toast({
+      title: 'Erro ao autenticar',
+      description: provider ? `Erro ao autenticar com ${provider}: ${errorMessage}` : errorMessage,
+      variant: 'destructive',
+    })
+
+    navigate('/login', { replace: true })
+  }
+
+  const handleTokenAuth = async (token: string) => {
+    try {
+      clearUserData(queryClient)
+      authUtils.setToken(token)
+      setToken(token)
+      authService.setToken(token)
+
+      const userData = await authService.getCurrentUser()
+      setUser(userData)
+      authUtils.setUser(userData)
+      queryClient.setQueryData(['user'], userData)
+
+      navigate('/app', { replace: true })
+    } catch (error) {
+      handleAuthError(error)
+    } finally {
+      setIsSocialLoading(false)
+    }
+  }
+
+  const handleProviderCallback = async (code: string, provider: AuthProvider) => {
+    try {
+      if (provider === 'google') {
+        await handleGoogleCallback(code)
+      } else if (provider === 'linkedin') {
+        await handleLinkedInCallback(code)
+      } else {
+        throw new Error('Provider inválido')
+      }
+    } catch (error) {
+      handleAuthError(error, provider)
+    } finally {
+      setIsSocialLoading(false)
+    }
+  }
+
   useEffect(() => {
     const token = searchParams.get('token')
-    const provider = searchParams.get('provider')
+    const provider = searchParams.get('provider') as AuthProvider | null
+
     if (token && provider) {
       setIsSocialLoading(true)
-      const handleToken = async () => {
-        try {
-          clearUserData(queryClient)
-          authUtils.setToken(token)
-          setToken(token)
-          authService.setToken(token)
-
-          const userData = await authService.getCurrentUser()
-          setUser(userData)
-          authUtils.setUser(userData)
-          queryClient.setQueryData(['user'], userData)
-          navigate('/app', { replace: true })
-        } catch (error) {
-          toast({
-            title: 'Erro ao autenticar',
-            description: 'Não foi possível carregar seus dados. Tente novamente.',
-            variant: 'destructive',
-          })
-          navigate('/login', { replace: true })
-        } finally {
-          setIsSocialLoading(false)
-        }
-      }
-
-      handleToken()
+      handleTokenAuth(token)
       return
     }
 
     const code = searchParams.get('code')
     if (code && provider) {
       setIsSocialLoading(true)
-      const handleCallback = async () => {
-        try {
-          if (provider === 'google') {
-            handleGoogleCallback(code)
-          } else if (provider === 'linkedin') {
-            handleLinkedInCallback(code)
-          } else {
-            throw new Error('Provider inválido')
-          }
-        } catch (error) {
-          toast({
-            title: 'Erro ao autenticar',
-            description: 'Não foi possível autenticar com ' + provider + '. Tente novamente.',
-            variant: 'destructive',
-          })
-          navigate('/login', { replace: true })
-        } finally {
-          setIsSocialLoading(false)
-        }
-      }
-      handleCallback()
+      handleProviderCallback(code, provider)
     }
-  }, [
-    searchParams,
-    handleGoogleCallback,
-    handleLinkedInCallback,
-    toast,
-    navigate,
-    queryClient,
-    setToken,
-    setUser,
-  ])
+  }, [searchParams, handleGoogleCallback, handleLinkedInCallback, queryClient, setToken, setUser])
 
   useEffect(() => {
     if (isSocialLoading && isAuthenticated && !isLoadingUser && user) {
@@ -138,11 +136,7 @@ export function Login() {
         description: 'Redirecionando para o dashboard...',
       })
     } catch (error) {
-      toast({
-        title: 'Erro ao fazer login',
-        description: 'Verifique suas credenciais e tente novamente.',
-        variant: 'destructive',
-      })
+      handleAuthError(error)
     }
   }
 
