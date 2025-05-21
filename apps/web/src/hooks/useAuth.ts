@@ -11,56 +11,60 @@ export function useAuth() {
   const navigate = useNavigate()
   const { user, setUser, setToken } = useAuthStore()
 
+  // Verificar token existente
   const token = authUtils.getToken()
+  if (token) {
+    authService.setToken(token)
+  }
+
   const { data: userData, isLoading: isLoadingUser } = useQuery<User>({
     queryKey: ['user'],
     queryFn: () => {
-      console.log('Buscando /me')
       return authService.getCurrentUser()
     },
     enabled: !!token,
-    retry: false,
-    staleTime: 1000 * 60 * 5,
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    gcTime: 1000 * 60 * 60, // 1 hora
   })
 
   // Sincronizar Zustand com resultado do useQuery
   useEffect(() => {
-    if (isLoadingUser) return // Não limpe o Zustand enquanto está carregando
+    if (isLoadingUser) return
+
     if (userData) {
       setUser(userData)
-      setToken(authUtils.getToken() ?? '')
-    } else {
+      setToken(token ?? '')
+      authUtils.setUser(userData)
+    } else if (!isLoadingUser && !userData && token) {
+      // Se não há dados do usuário mas existe token, limpar tudo
       clearUserData(queryClient)
     }
-  }, [userData, isLoadingUser, setUser, setToken, queryClient])
+  }, [userData, isLoadingUser, setUser, setToken, queryClient, token])
 
   const login = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      // Limpa dados do usuário anterior antes de fazer login
       clearUserData(queryClient)
-
       const response = await authService.login(credentials)
+
+      // Persistir dados
       authService.setToken(response.token)
       setToken(response.token)
       setUser(response.user)
       authUtils.setToken(response.token)
       authUtils.setUser(response.user)
       queryClient.setQueryData(['user'], response.user)
+
       return response.user
     },
-    onSuccess: async () => {
-      // Invalida e refaz a query do usuário para garantir que /me seja chamado
-      await queryClient.invalidateQueries({ queryKey: ['user'] })
-      await queryClient.refetchQueries({ queryKey: ['user'] })
+    onSuccess: () => {
       navigate('/app')
     },
   })
 
   const googleLogin = useMutation({
     mutationFn: async () => {
-      // Limpa dados do usuário anterior antes de redirecionar
       clearUserData(queryClient)
-
       const url = await authService.getGoogleConsentUrl()
       window.location.href = url
     },
@@ -68,9 +72,7 @@ export function useAuth() {
 
   const linkedInLogin = useMutation({
     mutationFn: async () => {
-      // Limpa dados do usuário anterior antes de redirecionar
       clearUserData(queryClient)
-
       const url = await authService.getLinkedInConsentUrl()
       window.location.href = url
     },
@@ -79,12 +81,15 @@ export function useAuth() {
   const handleGoogleCallback = useMutation({
     mutationFn: async (code: string) => {
       const response = await authService.handleGoogleCallback(code)
+
+      // Persistir dados
       authService.setToken(response.token)
       setToken(response.token)
       setUser(response.user)
       authUtils.setToken(response.token)
       authUtils.setUser(response.user)
       queryClient.setQueryData(['user'], response.user)
+
       return response.user
     },
     onSuccess: () => {
@@ -95,12 +100,15 @@ export function useAuth() {
   const handleLinkedInCallback = useMutation({
     mutationFn: async (code: string) => {
       const response = await authService.handleLinkedInCallback(code)
+
+      // Persistir dados
       authService.setToken(response.token)
       setToken(response.token)
       setUser(response.user)
       authUtils.setToken(response.token)
       authUtils.setUser(response.user)
       queryClient.setQueryData(['user'], response.user)
+
       return response.user
     },
     onSuccess: () => {

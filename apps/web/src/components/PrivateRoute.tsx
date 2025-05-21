@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthContext } from '@/contexts/AuthContext'
+import { authUtils } from '@/utils/auth'
 
 interface PrivateRouteProps {
   children: React.ReactNode
@@ -8,18 +9,9 @@ interface PrivateRouteProps {
 export function PrivateRoute({ children }: Readonly<PrivateRouteProps>) {
   const { isAuthenticated, isLoadingUser } = useAuthContext()
   const location = useLocation()
-  const token = window.localStorage.getItem('token')
+  const token = authUtils.getToken()
 
-  // Log estratégico para depuração
-  console.log(
-    '[PrivateRoute] isAuthenticated:',
-    isAuthenticated,
-    'isLoadingUser:',
-    isLoadingUser,
-    'token:',
-    token
-  )
-
+  // Se está carregando ou tem token mas ainda não autenticou, mostra loading
   if (isLoadingUser || (token && !isAuthenticated)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -28,9 +20,11 @@ export function PrivateRoute({ children }: Readonly<PrivateRouteProps>) {
     )
   }
 
+  // Se não está autenticado, redireciona para login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
+  // Se está autenticado, renderiza o conteúdo protegido
   return <>{children}</>
 }
