@@ -301,7 +301,7 @@ func (h *AuthHandler) LinkedInCallback(c *fiber.Ctx) error {
 	}
 
 	// Autentica/cria usuário
-	user, jwt, err := h.AuthService.LoginWithSocial(
+	_, jwt, err := h.AuthService.LoginWithSocial(
 		c.Context(),
 		models.AuthProviderLinkedIn,
 		userInfo.Sub,
@@ -313,7 +313,12 @@ func (h *AuthHandler) LinkedInCallback(c *fiber.Ctx) error {
 		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to login or register user", "details": err.Error()})
 	}
 
-	return c.JSON(map[string]interface{}{"user": user, "token": jwt})
+	frontendURL := os.Getenv("FRONT_END_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000/login"
+	}
+	redirectURL := fmt.Sprintf("%s?token=%s&provider=linkedin", frontendURL, jwt)
+	return c.Redirect(redirectURL, http.StatusTemporaryRedirect)
 }
 
 type linkedinUserInfo struct {
@@ -420,7 +425,7 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 
 	// Autentica/cria usuário
-	user, jwt, err := h.AuthService.LoginWithSocial(
+	_, jwt, err := h.AuthService.LoginWithSocial(
 		c.Context(),
 		models.AuthProviderGoogle,
 		userInfo.Sub,
@@ -432,7 +437,12 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to login or register user", "details": err.Error()})
 	}
 
-	return c.JSON(map[string]interface{}{"user": user, "token": jwt})
+	frontendURL := os.Getenv("FRONT_END_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000/login"
+	}
+	redirectURL := fmt.Sprintf("%s?token=%s&provider=google", frontendURL, jwt)
+	return c.Redirect(redirectURL, http.StatusTemporaryRedirect)
 }
 
 type googleUserInfo struct {

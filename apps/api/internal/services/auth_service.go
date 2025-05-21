@@ -120,6 +120,8 @@ func (s *authService) LoginWithSocial(ctx context.Context, provider models.AuthP
 			AvatarUrl:  avatarUrl,
 			Provider:   provider,
 			ProviderId: providerId,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
 		}
 		err = s.repo.Create(ctx, user)
 		if err != nil {

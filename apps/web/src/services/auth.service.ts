@@ -100,6 +100,11 @@ class AuthService {
     return response.data
   }
 
+  async updateUser(user: User): Promise<User> {
+    const response = await api.put<User>(this.AUTH_ENDPOINTS.me, user)
+    return response.data
+  }
+
   setToken(token: string): void {
     localStorage.setItem('token', token)
     api.defaults.headers.common.Authorization = `Bearer ${token}`
@@ -117,7 +122,6 @@ class AuthService {
 
 export const authService = new AuthService()
 
-// Bloco de inicialização para manter o token no axios após reload
 const token = authUtils.getToken()
 if (token) {
   authService.setToken(token)
