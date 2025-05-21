@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useToast } from '@/components/ui/use-toast'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { FcGoogle } from 'react-icons/fc'
 import { SiLinkedin } from 'react-icons/si'
 import { useQueryClient } from '@tanstack/react-query'
@@ -16,10 +16,12 @@ import { authUtils } from '@/utils/auth'
 import { useAuthStore } from '@/stores/auth'
 import { clearUserData } from '@/utils/clearUserData'
 import { authService } from '@/services/auth.service'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres'),
+  rememberMe: z.boolean().optional(),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -45,14 +47,24 @@ export function Login() {
   } = useAuth()
 
   const [isSocialLoading, setIsSocialLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setFocus,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      rememberMe: true,
+    },
   })
+
+  // Foco automático no primeiro campo
+  useEffect(() => {
+    setFocus('email')
+  }, [setFocus])
 
   const handleAuthError = (error: unknown, provider?: AuthProvider) => {
     console.error('Erro na autenticação:', error)
@@ -145,7 +157,9 @@ export function Login() {
       <div className="mx-auto w-full max-w-md space-y-8 rounded-xl border border-border bg-card p-8 shadow-lg">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold">The Post Pilot</h1>
-          <p className="text-muted-foreground">Acesse sua conta para gerenciar seus posts</p>
+          <p className="text-muted-foreground">
+            Gerencie e automatize seus posts em redes sociais com inteligência artificial
+          </p>
         </div>
 
         {isSocialLoading ? (
@@ -185,27 +199,62 @@ export function Login() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="seu@email.com" {...register('email')} />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  autoComplete="email"
+                  {...register('email')}
+                />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••"
-                  {...register('password')}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••"
+                    autoComplete="current-password"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {errors.password && (
                   <p className="text-sm text-destructive">{errors.password.message}</p>
                 )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="rememberMe" {...register('rememberMe')} />
+                  <Label htmlFor="rememberMe" className="text-sm font-normal">
+                    Manter conectado
+                  </Label>
+                </div>
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                  Esqueceu a senha?
+                </Link>
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoggingIn}>
                 {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar
               </Button>
+
+              <p className="text-center text-sm text-muted-foreground">
+                Não tem uma conta?{' '}
+                <Link to="/register" className="text-primary hover:underline">
+                  Criar conta
+                </Link>
+              </p>
             </form>
           </>
         )}

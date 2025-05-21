@@ -11,16 +11,9 @@ import { QueryClient } from '@tanstack/react-query'
  * - Cache do React Query
  */
 export const clearUserData = (queryClient: QueryClient) => {
-  // Limpa o estado do Zustand
   useAuthStore.getState().setUser(null)
   useAuthStore.getState().setToken(null)
-
-  // Remove o token do localStorage
   authUtils.removeToken()
-
-  // Remove o header de autorização do Axios
   delete api.defaults.headers.common['Authorization']
-
-  // Limpa todo o cache do React Query
   queryClient.clear()
 }
