@@ -5,9 +5,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "pwa-chrome",
+      "name": "Debug API",
+      "type": "go",
       "request": "launch",
-      "name": "Debug Frontend (WSL2)",
+      "mode": "auto",
+      "program": "${workspaceFolder}/apps/api",
+      "cwd": "${workspaceFolder}/apps/api",
+      "args": [],
+      "showLog": true
+    },
+    {
+      "name": "Debug Frontend",
+      "type": "chrome",
+      "request": "launch",
       "url": "http://localhost:3000",
       "webRoot": "${workspaceFolder}/apps/web",
       "sourceMapPathOverrides": {

@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { authService, User, type LoginCredentials } from '@/services/auth.service'
 import { useAuthStore } from '@/stores/auth'
 import { authUtils } from '@/utils/auth'
+import { clearUserData } from '@/utils/clearUserData'
 
 export function useAuth() {
   const queryClient = useQueryClient()
@@ -29,13 +30,15 @@ export function useAuth() {
       setUser(userData)
       setToken(authUtils.getToken() ?? '')
     } else {
-      setUser(null)
-      setToken(null)
+      clearUserData(queryClient)
     }
-  }, [userData, isLoadingUser, setUser, setToken])
+  }, [userData, isLoadingUser, setUser, setToken, queryClient])
 
   const login = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
+      // Limpa dados do usuário anterior antes de fazer login
+      clearUserData(queryClient)
+
       const response = await authService.login(credentials)
       authService.setToken(response.token)
       setToken(response.token)
@@ -55,6 +58,9 @@ export function useAuth() {
 
   const googleLogin = useMutation({
     mutationFn: async () => {
+      // Limpa dados do usuário anterior antes de redirecionar
+      clearUserData(queryClient)
+
       const url = await authService.getGoogleConsentUrl()
       window.location.href = url
     },
@@ -62,6 +68,9 @@ export function useAuth() {
 
   const linkedInLogin = useMutation({
     mutationFn: async () => {
+      // Limpa dados do usuário anterior antes de redirecionar
+      clearUserData(queryClient)
+
       const url = await authService.getLinkedInConsentUrl()
       window.location.href = url
     },
@@ -119,12 +128,7 @@ export function useAuth() {
   })
 
   const logout = () => {
-    authService.removeToken()
-    authUtils.clearAuth()
-    setUser(null)
-    setToken(null)
-    queryClient.cancelQueries({ queryKey: ['user'] })
-    queryClient.removeQueries({ queryKey: ['user'] })
+    clearUserData(queryClient)
     navigate('/login')
   }
 

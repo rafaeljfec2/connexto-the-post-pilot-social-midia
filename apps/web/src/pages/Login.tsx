@@ -15,6 +15,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { authUtils } from '@/utils/auth'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/lib/axios'
+import { clearUserData } from '@/utils/clearUserData'
+import { authService } from '@/services/auth.service'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -29,6 +31,7 @@ export function Login() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const setToken = useAuthStore(state => state.setToken)
+  const setUser = useAuthStore(state => state.setUser)
   const {
     login,
     isLoggingIn,
@@ -56,21 +59,43 @@ export function Login() {
     const provider = searchParams.get('provider')
     if (token && provider) {
       setIsSocialLoading(true)
-      authUtils.setToken(token)
-      setToken(token)
-      api.defaults.headers.common.Authorization = `Bearer ${token}`
-      queryClient.refetchQueries({ queryKey: ['user'] })
+      const handleToken = async () => {
+        try {
+          clearUserData(queryClient)
+          authUtils.setToken(token)
+          setToken(token)
+          authService.setToken(token)
+
+          const userData = await authService.getCurrentUser()
+          setUser(userData)
+          authUtils.setUser(userData)
+          queryClient.setQueryData(['user'], userData)
+          navigate('/app', { replace: true })
+        } catch (error) {
+          toast({
+            title: 'Erro ao autenticar',
+            description: 'Não foi possível carregar seus dados. Tente novamente.',
+            variant: 'destructive',
+          })
+          navigate('/login', { replace: true })
+        } finally {
+          setIsSocialLoading(false)
+        }
+      }
+
+      handleToken()
       return
     }
+
     const code = searchParams.get('code')
     if (code && provider) {
       setIsSocialLoading(true)
       const handleCallback = async () => {
         try {
           if (provider === 'google') {
-            await handleGoogleCallback(code)
+            handleGoogleCallback(code)
           } else if (provider === 'linkedin') {
-            await handleLinkedInCallback(code)
+            handleLinkedInCallback(code)
           } else {
             throw new Error('Provider inválido')
           }
@@ -95,6 +120,7 @@ export function Login() {
     navigate,
     queryClient,
     setToken,
+    setUser,
   ])
 
   useEffect(() => {

@@ -8,8 +8,19 @@ interface PrivateRouteProps {
 export function PrivateRoute({ children }: Readonly<PrivateRouteProps>) {
   const { isAuthenticated, isLoadingUser } = useAuthContext()
   const location = useLocation()
+  const token = window.localStorage.getItem('token')
 
-  if (isLoadingUser) {
+  // Log estratégico para depuração
+  console.log(
+    '[PrivateRoute] isAuthenticated:',
+    isAuthenticated,
+    'isLoadingUser:',
+    isLoadingUser,
+    'token:',
+    token
+  )
+
+  if (isLoadingUser || (token && !isAuthenticated)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

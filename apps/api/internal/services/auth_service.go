@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/postpilot/api/internal/models"
@@ -115,6 +116,7 @@ func (s *authService) LoginWithSocial(ctx context.Context, provider models.AuthP
 	if user == nil {
 		// Novo usuário
 		user = &models.User{
+			ID:         primitive.NewObjectID(),
 			Name:       name,
 			Email:      email,
 			AvatarUrl:  avatarUrl,
