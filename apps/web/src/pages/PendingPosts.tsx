@@ -41,7 +41,7 @@ const mockPosts: Post[] = [
     updatedAt: new Date('2024-03-14T15:30:00'),
   },
   {
-    id: '2',
+    id: '3',
     content: 'Lançamento do nosso novo produto! Confira as principais funcionalidades.',
     socialMedias: ['linkedin', 'facebook', 'instagram'],
     status: 'scheduled',
@@ -50,7 +50,7 @@ const mockPosts: Post[] = [
     updatedAt: new Date('2024-03-14T15:30:00'),
   },
   {
-    id: '2',
+    id: '4',
     content: 'Lançamento do nosso novo produto! Confira as principais funcionalidades.',
     socialMedias: ['linkedin', 'facebook', 'instagram'],
     status: 'scheduled',

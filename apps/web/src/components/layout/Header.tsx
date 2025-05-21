@@ -47,41 +47,12 @@ export function Header({
     <header className="fixed left-0 top-0 z-40 flex h-16 w-full items-center border-b bg-background px-8 py-2 text-secondary-foreground shadow dark:bg-zinc-900">
       <div className="flex w-full items-center justify-between">
         <div className="flex items-center gap-4">
-          {SheetTrigger ? (
-            <SheetTrigger asChild>
-              <button
-                className="rounded p-2 hover:bg-muted focus:outline-none md:hidden"
-                aria-label="Abrir menu"
-                onClick={onOpenSidebar}
-              >
-                <svg
-                  className="h-6 w-6 text-secondary-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </SheetTrigger>
-          ) : (
-            <button
-              className="rounded p-2 hover:bg-muted focus:outline-none md:hidden"
-              aria-label="Abrir menu"
-              onClick={onOpenSidebar}
-            >
-              <svg
-                className="h-6 w-6 text-secondary-foreground"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          )}
+          <button
+            className="rounded p-2 hover:bg-muted focus:outline-none md:hidden"
+            aria-label="Abrir menu"
+            onClick={onOpenSidebar}
+          ></button>
+
           <h1 className="text-lg font-semibold md:text-xl">The Post Pilot</h1>
         </div>
         <div className="flex items-center gap-6">

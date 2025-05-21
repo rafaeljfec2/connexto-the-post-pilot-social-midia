@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BarChart3, Clock, FileText, Home, Settings, User, CreditCard } from 'lucide-react'
+import { Clock, FileText, Home, Settings, User, CreditCard, Menu } from 'lucide-react'
+import { useState } from 'react'
 
 const routes = [
   {
@@ -41,65 +42,61 @@ const routes = [
 export function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleNavigation = (href: string) => {
+    navigate(href)
+    setIsOpen(false)
+  }
+
+  const SidebarContent = () => (
+    <>
+      <div className="flex h-16 items-center border-b px-6">
+        <h2 className="text-lg font-semibold">The Post Pilot</h2>
+      </div>
+      <ScrollArea className="h-[calc(100vh-4rem)]">
+        <div className="space-y-1 p-4">
+          {routes.map(route => (
+            <Button
+              key={route.href}
+              variant={location.pathname === route.href ? 'secondary' : 'ghost'}
+              className={cn(
+                'w-full justify-start gap-2',
+                location.pathname === route.href && 'bg-secondary'
+              )}
+              onClick={() => handleNavigation(route.href)}
+            >
+              <route.icon className="h-5 w-5" />
+              {route.label}
+            </Button>
+          ))}
+        </div>
+      </ScrollArea>
+    </>
+  )
 
   return (
     <>
-      {/* Sidebar para desktop */}
-      <aside className="hidden w-64 border-r bg-background md:block">
-        <div className="flex h-16 items-center border-b px-6">
-          <h2 className="text-lg font-semibold">The Post Pilot</h2>
-        </div>
-        <ScrollArea className="h-[calc(100vh-4rem)]">
-          <div className="space-y-1 p-4">
-            {routes.map(route => (
-              <Button
-                key={route.href}
-                variant={location.pathname === route.href ? 'secondary' : 'ghost'}
-                className={cn(
-                  'w-full justify-start gap-2',
-                  location.pathname === route.href && 'bg-secondary'
-                )}
-                onClick={() => navigate(route.href)}
-              >
-                <route.icon className="h-5 w-5" />
-                {route.label}
-              </Button>
-            ))}
-          </div>
-        </ScrollArea>
-      </aside>
-
-      {/* Sidebar para mobile */}
-      <Sheet>
+      {/* Menu hambúrguer (Sheet) mobile first */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <BarChart3 className="h-6 w-6" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed left-4 top-4 z-50 md:hidden"
+            aria-label="Abrir menu"
+          >
+            <Menu className="h-6 w-6" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
-          <div className="flex h-16 items-center border-b px-6">
-            <h2 className="text-lg font-semibold">The Post Pilot</h2>
-          </div>
-          <ScrollArea className="h-[calc(100vh-4rem)]">
-            <div className="space-y-1 p-4">
-              {routes.map(route => (
-                <Button
-                  key={route.href}
-                  variant={location.pathname === route.href ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start gap-2',
-                    location.pathname === route.href && 'bg-secondary'
-                  )}
-                  onClick={() => navigate(route.href)}
-                >
-                  <route.icon className="h-5 w-5" />
-                  {route.label}
-                </Button>
-              ))}
-            </div>
-          </ScrollArea>
+        <SheetContent side="left" className="w-64 bg-background p-0 md:hidden">
+          <SidebarContent />
         </SheetContent>
       </Sheet>
+      {/* Sidebar fixa só em desktop */}
+      <aside className="hidden w-64 border-r bg-background md:block">
+        <SidebarContent />
+      </aside>
     </>
   )
 }
