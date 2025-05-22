@@ -1,62 +1,35 @@
+import { Send, BarChart3, Users, Clock } from 'lucide-react'
+import { KpiCard } from '@/components/dashboard/KpiCard'
+import { EngagementLineChart } from '@/components/dashboard/EngagementLineChart'
+import { PostsByNetworkBarChart } from '@/components/dashboard/PostsByNetworkBarChart'
+import { RecentPostsTable } from '@/components/dashboard/RecentPostsTable'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Send } from 'lucide-react'
-
-// Dados simulados para posts pendentes
-const pendingPosts = [
-  {
-    id: 1,
-    title: 'Como a IA está transformando o marketing digital',
-    content: 'A inteligência artificial está revolucionando a forma como as empresas se conectam com seus clientes...',
-    status: 'pendente',
-    createdAt: '2024-02-20T10:00:00Z',
-  },
-  {
-    id: 2,
-    title: '5 tendências de conteúdo para LinkedIn em 2024',
-    content: 'O LinkedIn continua sendo uma plataforma poderosa para networking profissional...',
-    status: 'pendente',
-    createdAt: '2024-02-20T09:30:00Z',
-  },
-]
 
 export function Dashboard() {
   return (
-    <div className="container mx-auto px-2 sm:px-4 md:px-6 space-y-6">
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Posts Pendentes</h2>
-        <p className="text-muted-foreground">
-          Gerencie seus posts pendentes e agende publicações
-        </p>
+    <div className="w-full space-y-6 px-2 py-4 sm:px-4 md:mx-auto md:max-w-5xl md:px-8">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <KpiCard title="Total de Posts" value="120" icon={<Send className="h-5 w-5" />} />
+        <KpiCard title="Engajamento Total" value="8.500" icon={<BarChart3 className="h-5 w-5" />} />
+        <KpiCard title="Seguidores" value="2.300" icon={<Users className="h-5 w-5" />} />
+        <KpiCard title="Posts Pendentes" value="5" icon={<Clock className="h-5 w-5" />} />
       </div>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-        {pendingPosts.map((post) => (
-          <Card key={post.id} className="bg-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{post.title}</CardTitle>
-                  <CardDescription>
-                    Criado em {new Date(post.createdAt).toLocaleDateString()}
-                  </CardDescription>
-                </div>
-                <Badge variant="secondary">{post.status}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">{post.content}</p>
-            </CardContent>
-            <CardFooter className="flex justify-end space-x-2">
-              <Button variant="outline">Editar</Button>
-              <Button>
-                <Send className="mr-2 h-4 w-4" />
-                Publicar
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+
+      {/* Gráficos */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <EngagementLineChart />
+        <PostsByNetworkBarChart />
+      </div>
+
+      {/* Lista de posts recentes */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-lg font-bold">Posts Recentes</h2>
+          <Button variant="outline">Ver todos</Button>
+        </div>
+        <RecentPostsTable />
       </div>
     </div>
   )
-} 
+}

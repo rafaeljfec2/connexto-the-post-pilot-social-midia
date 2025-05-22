@@ -153,11 +153,11 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mx-auto w-full max-w-md space-y-8 rounded-xl border border-border bg-card p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-6 sm:px-6 md:px-8">
+      <div className="mx-auto w-full max-w-md space-y-8 rounded-xl border border-border bg-card p-4 shadow-lg sm:p-6 md:p-8">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold">The Post Pilot</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold md:text-3xl">The Post Pilot</h1>
+          <p className="text-base text-muted-foreground md:text-lg">
             Gerencie e automatize seus posts em redes sociais com inteligência artificial
           </p>
         </div>
