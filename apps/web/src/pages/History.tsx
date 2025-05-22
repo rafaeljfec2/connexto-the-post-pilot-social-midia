@@ -1,84 +1,72 @@
+import { HistoryKpiCard } from '@/components/dashboard/HistoryKpiCard'
+import { HistoryEngagementChart } from '@/components/dashboard/HistoryEngagementChart'
+import { HistoryPostsTable } from '@/components/dashboard/HistoryPostsTable'
+import { BarChart3, Send, Users, ThumbsUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { BarChart2, Share2 } from 'lucide-react'
-
-// Dados simulados para posts publicados
-const publishedPosts = [
-  {
-    id: 1,
-    title: 'O futuro do trabalho remoto',
-    content:
-      'O trabalho remoto veio para ficar e está transformando a forma como as empresas operam...',
-    status: 'publicado',
-    publishedAt: '2024-02-19T15:30:00Z',
-    metrics: {
-      likes: 45,
-      comments: 12,
-      shares: 8,
-    },
-  },
-  {
-    id: 2,
-    title: 'Dicas para networking efetivo no LinkedIn',
-    content: 'O networking é uma ferramenta poderosa para o desenvolvimento profissional...',
-    status: 'publicado',
-    publishedAt: '2024-02-18T10:15:00Z',
-    metrics: {
-      likes: 78,
-      comments: 23,
-      shares: 15,
-    },
-  },
-]
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export function History() {
   return (
-    <div className="container mx-auto space-y-6 px-2 sm:px-4 md:px-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Histórico de Posts</h2>
-        <p className="text-muted-foreground">Visualize o desempenho dos seus posts publicados</p>
+    <div className="w-full space-y-6 px-2 py-4 sm:px-4 md:mx-auto md:max-w-5xl md:px-8">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <HistoryKpiCard title="Posts" value="320" icon={<Send className="h-5 w-5" />} />
+        <HistoryKpiCard
+          title="Engajamento"
+          value="12.400"
+          icon={<BarChart3 className="h-5 w-5" />}
+        />
+        <HistoryKpiCard title="Seguidores" value="2.800" icon={<Users className="h-5 w-5" />} />
+        <HistoryKpiCard
+          title="Mais curtido"
+          value="1.200"
+          icon={<ThumbsUp className="h-5 w-5" />}
+        />
       </div>
-      <div className="mx-auto max-w-3xl space-y-4">
-        {publishedPosts.map(post => (
-          <Card key={post.id} className="bg-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{post.title}</CardTitle>
-                  <CardDescription>
-                    Publicado em {new Date(post.publishedAt).toLocaleDateString()}
-                  </CardDescription>
-                </div>
-                <Badge variant="secondary">{post.status}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4 text-muted-foreground">{post.content}</p>
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                <div className="flex items-center">
-                  <BarChart2 className="mr-1 h-4 w-4" />
-                  {post.metrics.likes} curtidas
-                </div>
-                <div className="flex items-center">
-                  <Share2 className="mr-1 h-4 w-4" />
-                  {post.metrics.shares} compartilhamentos
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end space-x-2">
-              <Button variant="outline">Ver Métricas</Button>
-              <Button variant="outline">Republicar</Button>
-            </CardFooter>
-          </Card>
-        ))}
+
+      {/* Filtros mockados */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <Select>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Período" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="7d">Últimos 7 dias</SelectItem>
+            <SelectItem value="30d">Últimos 30 dias</SelectItem>
+            <SelectItem value="all">Todo o período</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Rede Social" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="linkedin">LinkedIn</SelectItem>
+            <SelectItem value="instagram">Instagram</SelectItem>
+            <SelectItem value="facebook">Facebook</SelectItem>
+            <SelectItem value="twitter">Twitter</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button className="w-full sm:w-auto">Filtrar</Button>
+      </div>
+
+      {/* Gráfico de engajamento */}
+      <HistoryEngagementChart />
+
+      {/* Tabela de posts históricos */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-lg font-bold">Histórico de Posts</h2>
+          <Button variant="outline">Exportar</Button>
+        </div>
+        <HistoryPostsTable />
       </div>
     </div>
   )
