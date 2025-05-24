@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import {
   suggestionsService,
   Article,
@@ -9,35 +9,43 @@ import {
 } from '@/services/suggestions.service'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 
 export function Suggestions() {
   const navigate = useNavigate()
-  const [articles, setArticles] = useState<Article[]>([])
-  const [timeRecommendations, setTimeRecommendations] = useState<TimeRecommendation[]>([])
-  const [trends, setTrends] = useState<Trend[]>([])
-  const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  const {
+    data: articles = [],
+    isLoading: isLoadingArticles,
+    error: errorArticles,
+    refetch: refetchArticles,
+  } = useQuery<Article[]>({
+    queryKey: ['suggestions', 'articles'],
+    queryFn: () => suggestionsService.getArticleSuggestions(),
+  })
 
-  const loadData = async () => {
-    try {
-      setIsLoading(true)
-      const [articlesData, timeData, trendsData] = await Promise.all([
-        suggestionsService.getArticleSuggestions(),
-        suggestionsService.getTimeRecommendations(),
-        suggestionsService.getTrends(),
-      ])
-      setArticles(articlesData)
-      setTimeRecommendations(timeData)
-      setTrends(trendsData)
-    } catch (error) {
-      console.error('Erro ao carregar sugestões:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const {
+    data: timeRecommendations = [],
+    isLoading: isLoadingTimes,
+    error: errorTimes,
+    refetch: refetchTimes,
+  } = useQuery<TimeRecommendation[]>({
+    queryKey: ['suggestions', 'times'],
+    queryFn: () => suggestionsService.getTimeRecommendations(),
+  })
+
+  const {
+    data: trends = [],
+    isLoading: isLoadingTrends,
+    error: errorTrends,
+    refetch: refetchTrends,
+  } = useQuery<Trend[]>({
+    queryKey: ['suggestions', 'trends'],
+    queryFn: () => suggestionsService.getTrends(),
+  })
+
+  const isLoading = isLoadingArticles || isLoadingTimes || isLoadingTrends
+  const error = errorArticles || errorTimes || errorTrends
 
   const handleCreatePost = async (article: Article) => {
     try {
@@ -45,7 +53,6 @@ export function Suggestions() {
         topic: article.title,
         includeHashtags: true,
       })
-      // Redirecionar para a tela de criação de posts com o conteúdo gerado
       navigate('/app/pending', { state: { generatedContent: response } })
     } catch (error) {
       console.error('Erro ao gerar post:', error)
@@ -53,12 +60,11 @@ export function Suggestions() {
   }
 
   const handleSchedule = (article: Article) => {
-    // TODO: Implementar lógica de agendamento
     console.log('Agendar post com tema:', article.title)
   }
 
   const handleDiscard = (article: Article) => {
-    setArticles(articles.filter(a => a.url !== article.url))
+    refetchArticles()
   }
 
   if (isLoading) {
@@ -69,8 +75,18 @@ export function Suggestions() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <p className="text-destructive">
+          Não foi possível carregar as sugestões. Tente novamente mais tarde.
+        </p>
+      </div>
+    )
+  }
+
   return (
-    <div className="w-full space-y-6 px-2 py-4 sm:px-4 md:mx-auto md:max-w-xl md:px-8">
+    <div className="w-full space-y-6 px-2 py-4 sm:px-4 md:mx-auto md:max-w-2xl md:px-8">
       <Card className="bg-card">
         <CardHeader>
           <CardTitle>Sugestões de IA / Tendências</CardTitle>
@@ -80,35 +96,70 @@ export function Suggestions() {
             <div>
               <h3 className="mb-2 text-lg font-medium">Sugestões de Temas</h3>
               <div className="space-y-2">
-                {articles.map(article => (
-                  <Card key={article.url} className="p-2">
+                {articles.map((article: Article) => (
+                  <Card
+                    key={article.url}
+                    className="border border-border bg-muted/60 p-2 transition-shadow hover:shadow-lg"
+                  >
                     <CardContent className="p-2">
-                      <h4 className="font-medium">{article.title}</h4>
-                      <p className="text-sm text-muted-foreground">{article.summary}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {article.tags.map(tag => (
-                          <span
-                            key={tag}
-                            className="rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
-                          >
-                            {tag}
+                      <div className="flex flex-col gap-1">
+                        <h4 className="text-base font-semibold text-primary md:text-lg">
+                          {article.title}
+                        </h4>
+                        <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{article.source}</span>
+                          <span>•</span>
+                          <span>
+                            {article.publishedAt
+                              ? new Date(article.publishedAt).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })
+                              : ''}
                           </span>
-                        ))}
-                      </div>
-                      <div className="mt-2 flex space-x-2">
-                        <Button size="sm" onClick={() => handleCreatePost(article)}>
-                          Criar post
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleSchedule(article)}>
-                          Agendar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDiscard(article)}
-                        >
-                          Descartar
-                        </Button>
+                        </div>
+                        {article.summary && (
+                          <div
+                            className="relative max-h-24 overflow-hidden pr-2 text-sm text-muted-foreground"
+                            style={{
+                              WebkitMaskImage:
+                                'linear-gradient(180deg, #000 60%, transparent 100%)',
+                            }}
+                            dangerouslySetInnerHTML={{ __html: article.summary }}
+                          />
+                        )}
+                        {article.tags && article.tags.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {article.tags.map((tag: string) => (
+                              <span
+                                key={tag}
+                                className="rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="mt-3 flex flex-row-reverse gap-2">
+                          <Button size="sm" onClick={() => handleCreatePost(article)}>
+                            Criar post
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSchedule(article)}
+                          >
+                            Agendar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDiscard(article)}
+                          >
+                            Descartar
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -118,7 +169,7 @@ export function Suggestions() {
             <div>
               <h3 className="mb-2 text-lg font-medium">Horários Recomendados</h3>
               <div className="space-y-2">
-                {timeRecommendations.map(rec => (
+                {timeRecommendations.map((rec: TimeRecommendation) => (
                   <Card key={rec.time} className="p-2">
                     <CardContent className="p-2">
                       <p className="font-medium">{rec.time}</p>
@@ -133,7 +184,7 @@ export function Suggestions() {
             <div>
               <h3 className="mb-2 text-lg font-medium">Tendências de Engajamento</h3>
               <div className="space-y-2">
-                {trends.map(trend => (
+                {trends.map((trend: Trend) => (
                   <Card key={trend.topic} className="p-2">
                     <CardContent className="p-2">
                       <p className="font-medium">{trend.topic}</p>
