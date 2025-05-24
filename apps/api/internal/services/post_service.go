@@ -11,6 +11,7 @@ import (
 
 	"github.com/postpilot/api/internal/models"
 	"github.com/postpilot/api/internal/repositories"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -64,16 +65,21 @@ func (s *postService) GeneratePost(ctx context.Context, user *models.User, topic
 	}
 
 	output, usedModel, usage, err := s.openAIClient.GenerateText(ctx, apiKey, model, prompt)
-	logEntry.Model = usedModel
-	logEntry.Usage = usage
-	logEntry.Output = output
-	logEntry.Status = "success"
+
+	update := bson.M{
+		"$set": bson.M{
+			"model":  usedModel,
+			"usage":  usage,
+			"output": output,
+			"status": "success",
+		},
+	}
 	if err != nil {
-		logEntry.Status = "error"
-		logEntry.Error = err.Error()
+		update["$set"].(bson.M)["status"] = "error"
+		update["$set"].(bson.M)["error"] = err.Error()
 	}
 	// Atualiza log com resultado final
-	_, _ = s.logRepository.Create(ctx, logEntry)
+	_ = s.logRepository.UpdateByID(ctx, logId, update)
 
 	return &GeneratePostResponse{
 		GeneratedText: output,
