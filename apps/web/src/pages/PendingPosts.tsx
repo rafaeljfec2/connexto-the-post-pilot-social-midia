@@ -3,18 +3,23 @@ import { PendingPostsFilters } from '@/components/dashboard/PendingPostsFilters'
 import { PendingPostCard } from '@/components/dashboard/PendingPostCard'
 import { Clock, Send, Calendar, Edit } from 'lucide-react'
 import { usePosts } from '@/hooks/usePosts'
+import { useState } from 'react'
+import { Post } from '@/services/posts.service'
+import { EditPostModal } from '@/components/dashboard/EditPostModal'
 
 export function PendingPosts() {
   const { data: posts = [], isLoading } = usePosts()
+  const [editingPost, setEditingPost] = useState<Post | null>(null)
 
-  // Exemplo de mapeamento para o componente visual
   const mappedPosts = posts.map(post => ({
     id: post.id,
-    content: post.input,
-    status: post.status === 'success' ? 'Pendente' : post.status, // ajuste conforme regra de negócio
+    input: post.input,
+    output: post.output,
+    model: post.model,
+    status: post.status === 'success' ? 'Pendente' : post.status,
     createdAt: new Date(post.createdAt).toLocaleString('pt-BR'),
-    scheduledFor: undefined, // ajuste se houver campo futuro
-    socialMedias: [], // ajuste se houver integração futura
+    usage: post.usage,
+    onEdit: () => setEditingPost(post),
   }))
 
   return (
@@ -36,7 +41,11 @@ export function PendingPosts() {
           value={mappedPosts.filter(p => p.status === 'Pendente').length.toString()}
           icon={<Send className="h-5 w-5" />}
         />
-        <PendingKpiCard title="Editando" value="1" icon={<Edit className="h-5 w-5" />} />
+        <PendingKpiCard
+          title="Editando"
+          value={editingPost ? '1' : '0'}
+          icon={<Edit className="h-5 w-5" />}
+        />
       </div>
 
       {/* Filtros avançados */}
@@ -50,12 +59,13 @@ export function PendingPosts() {
           mappedPosts.map(post => (
             <PendingPostCard
               key={post.id}
-              content={post.content}
+              input={post.input}
+              output={post.output}
+              model={post.model}
               status={post.status}
               createdAt={post.createdAt}
-              scheduledFor={post.scheduledFor}
-              socialMedias={post.socialMedias}
-              onEdit={() => {}}
+              usage={post.usage}
+              onEdit={post.onEdit}
               onSchedule={() => {}}
               onPublish={() => {}}
               onDelete={() => {}}
@@ -63,6 +73,15 @@ export function PendingPosts() {
           ))
         )}
       </div>
+
+      {/* Modal de edição */}
+      {editingPost && (
+        <EditPostModal
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          // onSave={...} // implementar depois
+        />
+      )}
     </div>
   )
 }

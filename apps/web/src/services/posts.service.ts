@@ -6,7 +6,21 @@ export interface Post {
   input: string
   output: string
   model: string
-  usage: Record<string, unknown>
+  usage: {
+    completion_tokens: number
+    completion_tokens_details: {
+      accepted_prediction_tokens: number
+      audio_tokens: number
+      reasoning_tokens: number
+      rejected_prediction_tokens: number
+    }
+    prompt_tokens: number
+    prompt_tokens_details: {
+      audio_tokens: number
+      cached_tokens: number
+    }
+    total_tokens: number
+  }
   status: string
   error?: string
   createdAt: string
