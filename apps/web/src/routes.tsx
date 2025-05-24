@@ -13,6 +13,7 @@ import { PrivateRoute } from '@/components/PrivateRoute'
 import { Dashboard } from '@/pages/Dashboard'
 import { RootLayout } from '@/components/RootLayout'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { Suggestions } from '@/pages/Suggestions'
 
 export const router = createBrowserRouter([
   {
@@ -47,6 +48,10 @@ export const router = createBrowserRouter([
           {
             path: 'pending',
             element: <PendingPosts />,
+          },
+          {
+            path: 'suggestions',
+            element: <Suggestions />,
           },
           {
             path: 'history',

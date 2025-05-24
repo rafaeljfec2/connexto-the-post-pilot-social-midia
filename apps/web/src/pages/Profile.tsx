@@ -1,3 +1,5 @@
+import { ProfileKpiCard } from '@/components/dashboard/ProfileKpiCard'
+import { ProfileFollowersChart } from '@/components/dashboard/ProfileFollowersChart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -5,15 +7,30 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useState } from 'react'
 import {
+  Users,
+  Send,
+  BarChart3,
+  ThumbsUp,
   Linkedin,
   Twitter,
   Facebook,
   Instagram,
-  CreditCard,
   CheckCircle,
   XCircle,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+
+const user = {
+  name: 'João Silva',
+  email: 'joao@email.com',
+  avatarUrl: '',
+  socials: {
+    linkedin: true,
+    twitter: false,
+    facebook: true,
+    instagram: false,
+  },
+}
 
 export function Profile() {
   const { user } = useAuth()
@@ -37,8 +54,27 @@ export function Profile() {
   })
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 py-8">
-      {/* User Data */}
+    <div className="w-full space-y-6 px-2 py-4 sm:px-4 md:mx-auto md:max-w-3xl md:px-8">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <ProfileKpiCard title="Seguidores" value="2.800" icon={<Users className="h-5 w-5" />} />
+        <ProfileKpiCard title="Posts" value="320" icon={<Send className="h-5 w-5" />} />
+        <ProfileKpiCard
+          title="Engajamento"
+          value="12.400"
+          icon={<BarChart3 className="h-5 w-5" />}
+        />
+        <ProfileKpiCard
+          title="Mais curtido"
+          value="1.200"
+          icon={<ThumbsUp className="h-5 w-5" />}
+        />
+      </div>
+
+      {/* Gráfico de seguidores */}
+      <ProfileFollowersChart />
+
+      {/* Dados do usuário */}
       <Card>
         <CardHeader>
           <CardTitle>Dados do Usuário</CardTitle>
@@ -64,7 +100,7 @@ export function Profile() {
         </CardContent>
       </Card>
 
-      {/* Social Connections */}
+      {/* Conexões com redes sociais */}
       <Card>
         <CardHeader>
           <CardTitle>Conexões com Redes Sociais</CardTitle>

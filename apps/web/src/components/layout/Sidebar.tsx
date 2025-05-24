@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Clock, FileText, Home, Settings, User, CreditCard, Menu } from 'lucide-react'
+import { Clock, FileText, Home, Settings, User, CreditCard, Menu, Lightbulb } from 'lucide-react'
 import { useState } from 'react'
 
 const routes = [
@@ -16,6 +16,11 @@ const routes = [
     label: 'Posts Pendentes',
     icon: FileText,
     href: '/app/pending',
+  },
+  {
+    label: 'Sugestões',
+    icon: Lightbulb,
+    href: '/app/suggestions',
   },
   {
     label: 'Histórico',

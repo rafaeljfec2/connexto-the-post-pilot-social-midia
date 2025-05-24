@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 interface SettingsFormValues {
   openaiApiKey: string
@@ -16,86 +16,107 @@ interface SettingsFormValues {
 
 export function Settings() {
   const { user } = useAuth()
-
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
   const {
     register,
     handleSubmit,
     control,
-    reset,
     formState: { errors, isSubmitting },
+    reset,
   } = useForm<SettingsFormValues>({
     defaultValues: {
-      openaiApiKey: user?.openAiApiKey ?? '',
-      openaiModel: user?.openAiModel ?? '',
-      linkedinClientId: user?.email ?? '',
+      openaiApiKey: '',
+      openaiModel: '',
+      linkedinClientId: '',
       linkedinClientSecret: '',
       linkedinRedirectUri: '',
-      dataSources: user?.dataSources?.map(ds => ({ url: ds.url ?? '' })) ?? [{ url: '' }],
+      dataSources: [{ url: '' }],
     },
   })
+  const { fields, append, prepend, remove } = useFieldArray({ control, name: 'dataSources' })
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'dataSources',
-  })
-
-  // Atualiza o formulário quando o usuário mudar (ex: após login ou reload)
   useEffect(() => {
-    reset({
-      openaiApiKey: user?.openAiApiKey ?? '',
-      openaiModel: user?.openAiModel ?? '',
-      linkedinClientId: user?.email ?? '',
-      linkedinClientSecret: '',
-      linkedinRedirectUri: '',
-      dataSources: user?.dataSources?.map(ds => ({ url: ds.url ?? '' })) ?? [{ url: '' }],
-    })
+    if (user) {
+      reset({
+        openaiApiKey: user.openAiApiKey ?? '',
+        openaiModel: user.openAiModel ?? '',
+        dataSources: user.dataSources?.length
+          ? user.dataSources.map((ds: { url: string }) => ({ url: ds.url ?? '' }))
+          : [{ url: '' }],
+      })
+      setIsLoading(false)
+    }
   }, [user, reset])
 
-  const onSubmit = (data: SettingsFormValues) => {
-    // Aqui você pode salvar as configurações (ex: via API ou localStorage)
-    alert('Configurações salvas com sucesso!\n' + JSON.stringify(data, null, 2))
+  const onSubmit = async (data: SettingsFormValues) => {
+    setSuccess(false)
+    setError('')
+    try {
+      // TODO: Implementar atualização do usuário
+      setSuccess(true)
+    } catch (e) {
+      setError('Erro ao salvar configurações.')
+    }
+  }
+
+  const handleAddDataSource = () => {
+    prepend({ url: '' }, { shouldFocus: true })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <div className="text-muted-foreground">Carregando configurações...</div>
+      </div>
+    )
   }
 
   return (
-    <div className="container mx-auto flex justify-center px-2 py-6 sm:px-4 md:px-6">
-      <Card className="w-full max-w-xl bg-card">
+    <div className="w-full space-y-6 px-2 py-4 sm:px-4 md:mx-auto md:max-w-xl md:px-8">
+      <Card className="bg-card">
         <CardHeader>
-          <CardTitle>Configurações</CardTitle>
+          <CardTitle>Configurações de IA</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
-              <h2 className="mb-2 text-lg font-semibold">OpenAI</h2>
-              <div className="space-y-2">
-                <label htmlFor="openaiApiKey" className="block text-sm font-medium">
-                  OpenAI API Key
-                </label>
-                <Input
-                  id="openaiApiKey"
-                  placeholder="sk-..."
-                  type="password"
-                  {...register('openaiApiKey', { required: true })}
-                  autoComplete="off"
-                />
-                {errors.openaiApiKey && (
-                  <span className="text-xs text-destructive">API Key é obrigatória</span>
-                )}
-                <label htmlFor="openaiModel" className="block text-sm font-medium">
-                  OpenAI Model
-                </label>
-                <Input
-                  id="openaiModel"
-                  placeholder="gpt-4, gpt-3.5-turbo, etc."
-                  {...register('openaiModel', { required: true })}
-                />
-                {errors.openaiModel && (
-                  <span className="text-xs text-destructive">Modelo é obrigatório</span>
-                )}
-              </div>
+              <label htmlFor="openaiApiKey" className="mb-1 block text-sm font-medium">
+                OpenAI API Key
+              </label>
+              <Input
+                id="openaiApiKey"
+                placeholder="sk-..."
+                type="password"
+                autoComplete="off"
+                {...register('openaiApiKey', { required: true })}
+              />
+              {errors.openaiApiKey && (
+                <span className="text-xs text-destructive">API Key é obrigatória</span>
+              )}
             </div>
             <div>
-              <h2 className="mb-2 text-lg font-semibold">Fontes de Dados para IA</h2>
-              <div className="space-y-2">
+              <label htmlFor="openaiModel" className="mb-1 block text-sm font-medium">
+                OpenAI Model
+              </label>
+              <Input
+                id="openaiModel"
+                placeholder="gpt-4, gpt-3.5-turbo, etc."
+                {...register('openaiModel', { required: true })}
+              />
+              {errors.openaiModel && (
+                <span className="text-xs text-destructive">Modelo é obrigatório</span>
+              )}
+            </div>
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-sm font-medium">Fontes de Dados para IA</label>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddDataSource}>
+                  Adicionar site
+                </Button>
+              </div>
+              <div className="max-h-[200px] space-y-2 overflow-y-auto rounded-md border p-2">
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex items-center gap-2">
                     <Input
@@ -120,9 +141,6 @@ export function Settings() {
                     </Button>
                   </div>
                 ))}
-                <Button type="button" variant="outline" onClick={() => append({ url: '' })}>
-                  Adicionar site
-                </Button>
                 {errors.dataSources && (
                   <span className="text-xs text-destructive">Verifique as URLs informadas</span>
                 )}
@@ -131,6 +149,12 @@ export function Settings() {
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               Salvar configurações
             </Button>
+            {success && (
+              <span className="mt-2 block text-sm text-green-600">
+                Configurações salvas com sucesso!
+              </span>
+            )}
+            {error && <span className="mt-2 block text-sm text-destructive">{error}</span>}
           </form>
         </CardContent>
       </Card>
