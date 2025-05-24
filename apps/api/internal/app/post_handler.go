@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/services"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
@@ -114,4 +115,27 @@ func (h *PostHandler) PublishLinkedInPost(c *fiber.Ctx) error {
 		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to publish on LinkedIn", "details": err.Error()})
 	}
 	return c.JSON(map[string]interface{}{"status": "published", "linkedinPostId": linkedinPostId})
+}
+
+// @Summary List user posts
+// @Description Retorna os posts gerados pelo usuário
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.PostGenerationLog
+// @Failure 401 {object} map[string]interface{}
+// @Router /posts [get]
+// @Security BearerAuth
+func (h *PostHandler) ListPosts(c *fiber.Ctx) error {
+	claims := c.Locals("user").(jwt.MapClaims)
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user claims"})
+	}
+	userObjId, _ := primitive.ObjectIDFromHex(userId)
+	posts, err := h.PostService.ListPosts(c.Context(), userObjId, 50)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(posts)
 }

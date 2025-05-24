@@ -129,6 +129,28 @@ definitions:
     - DataSourceRSS
     - DataSourceDevTo
     - DataSourceHackerNews
+  models.PostGenerationLog:
+    properties:
+      createdAt:
+        type: string
+      error:
+        type: string
+      id:
+        type: string
+      input:
+        type: string
+      model:
+        type: string
+      output:
+        type: string
+      status:
+        type: string
+      usage:
+        additionalProperties: true
+        type: object
+      userId:
+        type: string
+    type: object
   models.User:
     properties:
       avatarUrl:
@@ -634,6 +656,30 @@ paths:
       summary: Update user profile/configuration
       tags:
       - User
+  /posts:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os posts gerados pelo usuário
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.PostGenerationLog'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List user posts
+      tags:
+      - Posts
   /posts/generate:
     post:
       consumes:

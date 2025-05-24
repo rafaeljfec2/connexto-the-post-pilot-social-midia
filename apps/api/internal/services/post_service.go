@@ -18,6 +18,7 @@ import (
 type PostService interface {
 	GeneratePost(ctx context.Context, user *models.User, topic string) (*GeneratePostResponse, error)
 	PublishOnLinkedIn(ctx context.Context, accessToken, personUrn, text string) (string, error)
+	ListPosts(ctx context.Context, userId primitive.ObjectID, limit int) ([]models.PostGenerationLog, error)
 }
 
 type postService struct {
@@ -187,4 +188,8 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 	logEntry.Error = "Unknown error: no post ID returned"
 	_, _ = s.storiesRepository.Create(ctx, logEntry)
 	return "", fmt.Errorf(logEntry.Error)
+}
+
+func (s *postService) ListPosts(ctx context.Context, userId primitive.ObjectID, limit int) ([]models.PostGenerationLog, error) {
+	return s.logRepository.ListByUser(ctx, userId, limit)
 }
