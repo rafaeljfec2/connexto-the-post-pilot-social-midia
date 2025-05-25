@@ -106,6 +106,7 @@ class AuthService {
   }
 
   setToken(token: string): void {
+    console.log('Armazenando token:', token ? 'Presente' : 'Ausente')
     localStorage.setItem('token', token)
     api.defaults.headers.common.Authorization = `Bearer ${token}`
   }
@@ -115,6 +116,7 @@ class AuthService {
   }
 
   removeToken(): void {
+    console.log('Removendo token')
     localStorage.removeItem('token')
     delete api.defaults.headers.common.Authorization
   }

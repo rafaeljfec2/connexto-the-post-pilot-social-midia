@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/mmcdole/gofeed"
@@ -34,7 +36,9 @@ func NewArticleService() ArticleService {
 
 // FetchSuggestions busca e normaliza artigos das fontes do usuário
 func (s *articleService) FetchSuggestions(ctx context.Context, user *models.User, q string, from, to *time.Time, tags []string, limit int) ([]Article, error) {
-	allArticles := s.fetchFromAllSources(ctx, user, limit)
+	// Buscar mais artigos por fonte para garantir variedade antes de filtrar
+	const maxFetchPerSource = 50
+	allArticles := s.fetchFromAllSources(ctx, user, maxFetchPerSource)
 	return s.filterArticles(allArticles, q, from, to, tags, limit), nil
 }
 
@@ -43,13 +47,26 @@ func (s *articleService) fetchFromAllSources(ctx context.Context, user *models.U
 	if numSources == 0 {
 		return nil
 	}
-	// Limite por fonte (pelo menos 1)
-	perSource := (limit + numSources - 1) / numSources
-	// Busca os artigos de cada fonte
-	articlesBySource := make([][]Article, numSources)
-	for i, ds := range user.DataSources {
-		articlesBySource[i] = s.fetchFromSource(ctx, ds, perSource)
+
+	type result struct {
+		idx      int
+		articles []Article
 	}
+
+	resultsCh := make(chan result, numSources)
+	for i, ds := range user.DataSources {
+		go func(idx int, ds models.DataSource) {
+			articles := s.fetchFromSource(ctx, ds, limit)
+			resultsCh <- result{idx: idx, articles: articles}
+		}(i, ds)
+	}
+
+	articlesBySource := make([][]Article, numSources)
+	for i := 0; i < numSources; i++ {
+		res := <-resultsCh
+		articlesBySource[res.idx] = res.articles
+	}
+
 	// Intercala os artigos (round-robin)
 	var diversified []Article
 	for i := 0; len(diversified) < limit; i++ {
@@ -92,15 +109,15 @@ func (s *articleService) fetchFromSource(ctx context.Context, ds models.DataSour
 }
 
 func (s *articleService) filterArticles(articles []Article, q string, from, to *time.Time, tags []string, limit int) []Article {
-	filtered := make([]Article, 0, limit)
+	filtered := make([]Article, 0)
 	for _, art := range articles {
 		if !s.matchesFilters(art, q, from, to, tags) {
 			continue
 		}
 		filtered = append(filtered, art)
-		if len(filtered) >= limit {
-			break
-		}
+	}
+	if len(filtered) > limit {
+		filtered = filtered[:limit]
 	}
 	return filtered
 }
@@ -150,11 +167,7 @@ func fetchArticlesFromRSS(ctx context.Context, url string, limit int) ([]Article
 }
 
 func containsIgnoreCase(s, substr string) bool {
-	return s != "" && substr != "" && (containsFold(s, substr))
-}
-
-func containsFold(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(s) > 0 && (containsFold(s[1:], substr) || containsFold(s, substr[1:]))))
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
 
 func hasAnyTag(articleTags, filterTags []string) bool {
@@ -225,6 +238,9 @@ type hackerNewsItem struct {
 }
 
 func fetchArticlesFromHackerNews(ctx context.Context, limit int) ([]Article, error) {
+	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	defer cancel()
+
 	req, _ := http.NewRequestWithContext(ctx, "GET", "https://hacker-news.firebaseio.com/v0/topstories.json", nil)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -239,34 +255,59 @@ func fetchArticlesFromHackerNews(ctx context.Context, limit int) ([]Article, err
 	}
 
 	articles := make([]Article, 0, limit)
+	type result struct {
+		article Article
+		ok      bool
+	}
+	resultsCh := make(chan result, limit)
+	var wg sync.WaitGroup
+	maxConcurrent := 8 // Limite de goroutines simultâneas
+	sem := make(chan struct{}, maxConcurrent)
+
 	for i, id := range ids {
 		if i >= limit {
 			break
 		}
-		itemUrl := fmt.Sprintf("https://hacker-news.firebaseio.com/v0/item/%d.json", id)
-		itemReq, _ := http.NewRequestWithContext(ctx, "GET", itemUrl, nil)
-		itemResp, err := http.DefaultClient.Do(itemReq)
-		if err != nil {
-			log.Logger.Warn("Failed to fetch Hacker News item", zap.String("itemUrl", itemUrl), zap.Error(err))
-			continue
-		}
-		var item hackerNewsItem
-		if err := json.NewDecoder(itemResp.Body).Decode(&item); err != nil {
+		wg.Add(1)
+		sem <- struct{}{} // Adquire slot
+		go func(id int) {
+			defer wg.Done()
+			defer func() { <-sem }() // Libera slot
+			itemUrl := fmt.Sprintf("https://hacker-news.firebaseio.com/v0/item/%d.json", id)
+			itemReq, _ := http.NewRequestWithContext(ctx, "GET", itemUrl, nil)
+			itemResp, err := http.DefaultClient.Do(itemReq)
+			if err != nil {
+				log.Logger.Warn("Failed to fetch Hacker News item", zap.String("itemUrl", itemUrl), zap.Error(err))
+				resultsCh <- result{ok: false}
+				return
+			}
+			var item hackerNewsItem
+			if err := json.NewDecoder(itemResp.Body).Decode(&item); err != nil {
+				itemResp.Body.Close()
+				log.Logger.Warn("Failed to decode Hacker News item", zap.String("itemUrl", itemUrl), zap.Error(err))
+				resultsCh <- result{ok: false}
+				return
+			}
 			itemResp.Body.Close()
-			log.Logger.Warn("Failed to decode Hacker News item", zap.String("itemUrl", itemUrl), zap.Error(err))
-			continue
-		}
-		itemResp.Body.Close()
-		if item.Url == "" {
-			continue
-		}
-		articles = append(articles, Article{
-			Title:       item.Title,
-			Url:         item.Url,
-			Source:      "Hacker News",
-			PublishedAt: time.Unix(item.Time, 0),
-		})
+			if item.Url == "" {
+				resultsCh <- result{ok: false}
+				return
+			}
+			resultsCh <- result{article: Article{
+				Title:       item.Title,
+				Url:         item.Url,
+				Source:      "Hacker News",
+				PublishedAt: time.Unix(item.Time, 0),
+			}, ok: true}
+		}(id)
 	}
-	log.Logger.Info("Fetched articles from Hacker News", zap.Int("count", len(articles)))
+	wg.Wait()
+	close(resultsCh)
+	for res := range resultsCh {
+		if res.ok {
+			articles = append(articles, res.article)
+		}
+	}
+	log.Logger.Info("Fetched articles from Hacker News (parallel)", zap.Int("count", len(articles)))
 	return articles, nil
 }

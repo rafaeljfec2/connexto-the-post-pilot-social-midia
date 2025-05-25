@@ -9,19 +9,6 @@ export interface Article {
   tags?: string[]
 }
 
-export interface GeneratePostRequest {
-  topic: string
-  tone?: string
-  length?: 'short' | 'medium' | 'long'
-  includeHashtags?: boolean
-}
-
-export interface GeneratePostResponse {
-  content: string
-  hashtags: string[]
-  suggestedTime?: string
-}
-
 export interface TimeRecommendation {
   time: string
   engagement: number
@@ -30,6 +17,23 @@ export interface TimeRecommendation {
 export interface Trend {
   topic: string
   engagement: number
+}
+
+export interface GeneratePostRequest {
+  topic: string
+  includeHashtags?: boolean
+}
+
+export interface GeneratePostResponse {
+  generatedText: string
+  model: string
+  usage?: {
+    promptTokens: number
+    completionTokens: number
+    totalTokens: number
+  }
+  createdAt: string
+  logId: string
 }
 
 class SuggestionsService {
@@ -45,8 +49,17 @@ class SuggestionsService {
     tags?: string[]
     limit?: number
   }): Promise<Article[]> {
-    const response = await api.get<Article[]>(this.SUGGESTIONS_ENDPOINTS.articles, { params })
-    return response.data
+    const response = await api.get<Article[]>(this.SUGGESTIONS_ENDPOINTS.articles, {
+      params,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+    return response.data.map(article => ({
+      ...article,
+      url: decodeURIComponent(article.url),
+    }))
   }
 
   async generatePost(request: GeneratePostRequest): Promise<GeneratePostResponse> {
@@ -69,10 +82,10 @@ class SuggestionsService {
 
   async getTrends(): Promise<Trend[]> {
     return [
-      { topic: 'Inteligência Artificial', engagement: 85 },
-      { topic: 'Desenvolvimento Web', engagement: 75 },
+      { topic: 'Inteligência Artificial', engagement: 95 },
+      { topic: 'Desenvolvimento Web', engagement: 85 },
       { topic: 'Cloud Computing', engagement: 80 },
-      { topic: 'DevOps', engagement: 70 },
+      { topic: 'DevOps', engagement: 75 },
     ]
   }
 }

@@ -87,7 +87,7 @@ func (h *ArticleHandler) GetSuggestions(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(map[string]interface{}{"error": err.Error()})
 	}
 	log.Logger.Info("Article suggestions fetched", zap.String("userId", userId), zap.String("endpoint", "/articles/suggestions"), zap.Int("count", len(articles)))
-	return c.JSON(articles)
+	return c.Status(http.StatusOK).JSON(articles)
 }
 
 func splitAndTrim(s, sep string) []string {
