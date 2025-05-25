@@ -1,5 +1,25 @@
 basePath: /the-post-pilot/v1
 definitions:
+  app.DuckArticle:
+    properties:
+      publishedAt:
+        type: string
+      source:
+        type: string
+      summary:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
+    type: object
+  app.DuckArticlesResponse:
+    properties:
+      articles:
+        items:
+          $ref: '#/definitions/app.DuckArticle'
+        type: array
+    type: object
   app.generatePostRequest:
     properties:
       topic:
@@ -273,6 +293,40 @@ paths:
       security:
       - BearerAuth: []
       summary: Get article suggestions from user sources
+      tags:
+      - Articles
+  /articles/suggestions/by/duckduckgo:
+    get:
+      description: Busca artigos no DuckDuckGo para cada palavra-chave, em paralelo,
+        com scraping e parsing dos resultados.
+      parameters:
+      - description: Lista de palavras-chave separadas por vírgula
+        example: golang,ia,vscode
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: 'Número de artigos por palavra-chave (default: 3)'
+        example: 3
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.DuckArticlesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Busca artigos no DuckDuckGo por palavra-chave (paralelo)
       tags:
       - Articles
   /auth/google/callback:

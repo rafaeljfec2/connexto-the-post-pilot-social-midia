@@ -1,11 +1,15 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/postpilot/api/internal/log"
@@ -98,4 +102,102 @@ func splitAndTrim(s, sep string) []string {
 		}
 	}
 	return parts
+}
+
+type DuckArticle struct {
+	Title       string `json:"title"`
+	URL         string `json:"url"`
+	Source      string `json:"source"`
+	PublishedAt string `json:"publishedAt"`
+	Summary     string `json:"summary"`
+}
+
+type DuckArticlesResponse struct {
+	Articles []DuckArticle `json:"articles"`
+}
+
+// DuckDuckGoSuggestionsHandler godoc
+// @Summary Busca artigos no DuckDuckGo por palavra-chave (paralelo)
+// @Description Busca artigos no DuckDuckGo para cada palavra-chave, em paralelo, com scraping e parsing dos resultados.
+// @Tags Articles
+// @Produce json
+// @Param q query string true "Lista de palavras-chave separadas por vírgula" example(golang,ia,vscode)
+// @Param limit query int false "Número de artigos por palavra-chave (default: 3)" example(3)
+// @Success 200 {object} DuckArticlesResponse
+// @Failure 400 {object} map[string]string
+// @Router /articles/suggestions/by/duckduckgo [get]
+// @Security BearerAuth
+func (h *ArticleHandler) DuckDuckGoSuggestionsHandler(c *fiber.Ctx) error {
+	q := c.Query("q")
+	if q == "" {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Missing required parameter: q"})
+	}
+	limit := 3
+	if l := c.Query("limit"); l != "" {
+		fmt.Sscanf(l, "%d", &limit)
+	}
+	keywords := strings.Split(q, ",")
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var articles []DuckArticle
+
+	for _, keyword := range keywords {
+		keyword = strings.TrimSpace(keyword)
+		if keyword == "" {
+			continue
+		}
+		wg.Add(1)
+		go func(kw string) {
+			defer wg.Done()
+			results := fetchDuckDuckGoArticles(kw, limit)
+			mu.Lock()
+			articles = append(articles, results...)
+			mu.Unlock()
+		}(keyword)
+	}
+
+	wg.Wait()
+	return c.JSON(DuckArticlesResponse{Articles: articles})
+}
+
+func fetchDuckDuckGoArticles(keyword string, limit int) []DuckArticle {
+	searchURL := "https://html.duckduckgo.com/html/?q=" + url.QueryEscape(keyword) + "&iar=news&ia=news"
+	req, _ := http.NewRequest("GET", searchURL, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+	client := &http.Client{Timeout: 8 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil
+	}
+
+	var articles []DuckArticle
+	doc.Find(".result").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		if i >= limit {
+			return false
+		}
+		title := s.Find(".result__title").Text()
+		href, _ := s.Find(".result__a").Attr("href")
+		img, _ := s.Find("img").Attr("src")
+		summary := s.Find(".result__snippet").Text()
+		author := s.Find(".result__extras__url").Text()
+		parsedURL, _ := url.Parse(href)
+		source := ""
+		if parsedURL != nil {
+			source = parsedURL.Host
+		}
+		articles = append(articles, DuckArticle{
+			Title:       title,
+			URL:         href,
+			Source:      source,
+			PublishedAt: time.Now().UTC().Format(time.RFC3339),
+			Summary:     fmt.Sprintf("<img src='%s'/><p>%s</p><i>%s</i>", img, summary, author),
+		})
+		return true
+	})
+	return articles
 }

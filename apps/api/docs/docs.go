@@ -94,6 +94,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/articles/suggestions/by/duckduckgo": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Busca artigos no DuckDuckGo para cada palavra-chave, em paralelo, com scraping e parsing dos resultados.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Busca artigos no DuckDuckGo por palavra-chave (paralelo)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "golang,ia,vscode",
+                        "description": "Lista de palavras-chave separadas por vírgula",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "example": 3,
+                        "description": "Número de artigos por palavra-chave (default: 3)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.DuckArticlesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/google/callback": {
             "get": {
                 "description": "Handles Google OpenID Connect callback, authenticates or creates user, returns JWT and user object",
@@ -752,6 +803,37 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "app.DuckArticle": {
+            "type": "object",
+            "properties": {
+                "publishedAt": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.DuckArticlesResponse": {
+            "type": "object",
+            "properties": {
+                "articles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.DuckArticle"
+                    }
+                }
+            }
+        },
         "app.generatePostRequest": {
             "type": "object",
             "properties": {
