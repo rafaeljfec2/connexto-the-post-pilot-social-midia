@@ -8,10 +8,13 @@ import { Post } from '@/services/posts.service'
 import { EditPostModal } from '@/components/dashboard/EditPostModal'
 
 export function PendingPosts() {
-  const { data: posts = [], isLoading } = usePosts()
+  const { data: posts, isLoading, error } = usePosts()
   const [editingPost, setEditingPost] = useState<Post | null>(null)
 
-  const mappedPosts = posts.map(post => ({
+  // Garantir que posts seja sempre um array
+  const safePosts = Array.isArray(posts) ? posts : []
+
+  const mappedPosts = safePosts.map(post => ({
     id: post.id,
     input: post.input,
     output: post.output,
@@ -55,6 +58,14 @@ export function PendingPosts() {
       <div className="space-y-4">
         {isLoading ? (
           <div className="text-center text-muted-foreground">Carregando posts...</div>
+        ) : error ? (
+          <div className="text-center text-destructive">
+            Erro ao carregar posts. Tente novamente mais tarde.
+          </div>
+        ) : mappedPosts.length === 0 ? (
+          <div className="text-center text-muted-foreground">
+            Nenhum post encontrado. Gere um novo post a partir das sugestões!
+          </div>
         ) : (
           mappedPosts.map(post => (
             <PendingPostCard

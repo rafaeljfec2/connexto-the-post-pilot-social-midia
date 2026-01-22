@@ -7,21 +7,21 @@ interface PendingPostCardProps {
   input: string
   output: string
   model: string
-  usage: {
-    completion_tokens: number
-    completion_tokens_details: {
-      accepted_prediction_tokens: number
-      audio_tokens: number
-      reasoning_tokens: number
-      rejected_prediction_tokens: number
+  usage?: {
+    completion_tokens?: number
+    completion_tokens_details?: {
+      accepted_prediction_tokens?: number
+      audio_tokens?: number
+      reasoning_tokens?: number
+      rejected_prediction_tokens?: number
     }
-    prompt_tokens: number
-    prompt_tokens_details: {
-      audio_tokens: number
-      cached_tokens: number
+    prompt_tokens?: number
+    prompt_tokens_details?: {
+      audio_tokens?: number
+      cached_tokens?: number
     }
-    total_tokens: number
-  }
+    total_tokens?: number
+  } | null
   status: string
   createdAt: string
   onEdit?: () => void
@@ -63,13 +63,21 @@ export function PendingPostCard({
       </CardHeader>
       <CardContent className="flex-1 space-y-2">
         <div className="whitespace-pre-line border-l-2 border-primary/30 pl-2 text-sm text-muted-foreground">
-          {output}
+          {output || 'Nenhum conteúdo gerado'}
         </div>
-        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <span>Prompt tokens: {usage.prompt_tokens}</span>
-          <span>Completion tokens: {usage.completion_tokens}</span>
-          <span>Total tokens: {usage.total_tokens}</span>
-        </div>
+        {usage && (
+          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+            {usage.prompt_tokens !== undefined && (
+              <span>Prompt tokens: {usage.prompt_tokens}</span>
+            )}
+            {usage.completion_tokens !== undefined && (
+              <span>Completion tokens: {usage.completion_tokens}</span>
+            )}
+            {usage.total_tokens !== undefined && (
+              <span>Total tokens: {usage.total_tokens}</span>
+            )}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex flex-col gap-2 border-t bg-muted/50 p-4 sm:flex-row sm:gap-2">
         <Button variant="outline" className="w-full sm:w-auto" onClick={onEdit}>

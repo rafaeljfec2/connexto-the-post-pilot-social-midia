@@ -36,5 +36,5 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "javascript.updateImportsOnFileMove.enabled": "always",
   "typescript.updateImportsOnFileMove.enabled": "always",
-  "cSpell.words": ["bson", "postpilot", "rabbitmq"]
+  "cSpell.enabled": false
 }

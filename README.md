@@ -79,16 +79,16 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
 | 8 - Logging/auditoria                         | ✅ Pronto |
 | 9 - Tratamento de token expirado/inválido     | ✅ Pronto |
 
-| Funcionalidade (Frontend)              | Status      |
-| -------------------------------------- | ----------- |
-| 1 - Dashboard com sugestões            | ⬜ Pendente |
-| 2 - Editor de posts                    | ⬜ Pendente |
-| 3 - Aprovação de sugestões             | ⬜ Pendente |
-| 4 - Publicação no LinkedIn com 1 click | ⬜ Pendente |
-| 5 - Visualização do histórico de posts | ⬜ Pendente |
-| 6 - Configuração de fontes técnicas    | ⬜ Pendente |
-| 7 - Login social (Google/LinkedIn)     | ⬜ Pendente |
-| 8 - Mensagens de erro e feedback       | ⬜ Pendente |
+| Funcionalidade (Frontend)              | Status    |
+| -------------------------------------- | --------- |
+| 1 - Dashboard com sugestões            | ✅ Pronto |
+| 2 - Editor de posts                    | ✅ Pronto |
+| 3 - Aprovação de sugestões             | ✅ Pronto |
+| 4 - Publicação no LinkedIn com 1 click | ✅ Pronto |
+| 5 - Visualização do histórico de posts | ✅ Pronto |
+| 6 - Configuração de fontes técnicas    | ✅ Pronto |
+| 7 - Login social (Google/LinkedIn)     | ✅ Pronto |
+| 8 - Mensagens de erro e feedback       | ✅ Pronto |
 
 ### Detalhes Técnicos Implementados
 
@@ -101,12 +101,15 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
 
 2. **Fontes Técnicas**
 
-   - Integração com RSS feeds
+   - Integração com RSS feeds (parsing via gofeed)
    - API do dev.to com suporte a tags
-   - Hacker News API para top stories
+   - Hacker News API para top stories (busca paralela otimizada)
+   - Busca alternativa via DuckDuckGo (scraping HTML)
    - Normalização de artigos em formato comum
-   - Filtros por palavra-chave, data e tags
-   - Limite configurável de resultados
+   - Busca paralela de múltiplas fontes simultaneamente
+   - Diversificação de resultados (round-robin entre fontes)
+   - Filtros avançados por palavra-chave, data e tags
+   - Limite configurável de resultados (padrão: 6, máximo: 100)
 
 3. **API RESTful**
 
@@ -122,27 +125,130 @@ Este projeto utiliza uma arquitetura **monorepo** moderna, baseada em [pnpm work
    - Proteção contra CSRF
    - Headers de segurança
 
+5. **Gestão de Posts**
+   - Listagem de posts gerados pelo usuário via API RESTful
+   - Endpoint `GET /the-post-pilot/v1/posts` com autenticação JWT
+   - Retorno de posts com informações completas (input, output, modelo, uso de tokens, status)
+   - Tratamento de estados no frontend (loading, error, empty)
+   - Integração com React Query para cache e retry automático
+   - Hook customizado `usePosts` para gerenciamento de estado
+   - Serviço `postsService` com tratamento robusto de erros
+   - Componentes reutilizáveis para exibição e edição de posts
+   - Filtros e paginação (preparado para implementação futura)
+
+## 🎯 Evoluções Recentes
+
+### Integração Completa com OpenAI
+
+✅ **Implementado:**
+
+- Cliente dedicado para API da OpenAI (`OpenAIClient`)
+- Suporte a múltiplos modelos (gpt-3.5-turbo, gpt-4, etc.)
+- Configuração individual de API key e modelo por usuário
+- Geração de posts a partir de temas/artigos
+- Monitoramento de uso de tokens (prompt, completion, total)
+- Logging completo de cada geração (input, output, modelo, usage, status)
+- Tratamento robusto de erros da API
+- Histórico auditável de todas as gerações
+
+**Desafios Superados:**
+
+- Gerenciamento seguro de credenciais por usuário
+- Tratamento de erros e timeouts da API
+- Monitoramento de custos via tracking de tokens
+- Validação de respostas e fallbacks
+
+### Sistema de Pesquisa de Artigos Paralelo
+
+✅ **Implementado:**
+
+- Busca simultânea em múltiplas fontes (goroutines)
+- Intercalação round-robin para diversificar resultados
+- Otimização de performance no Hacker News (até 8 requisições simultâneas)
+- Timeouts configuráveis (8s para Hacker News)
+- Filtros combinados (palavra-chave, datas, tags)
+- Busca alternativa via DuckDuckGo para casos sem fontes configuradas
+
+### Frontend Robusto e Resiliente
+
+✅ **Implementado:**
+
+- Página de Sugestões com filtros dinâmicos
+- Geração de posts com um clique a partir de artigos
+- Página de Posts Pendentes com KPIs e filtros
+- Tratamento robusto de erros e estados vazios
+- Proteção contra `null/undefined` em todos os componentes
+- Mensagens de feedback claras para o usuário
+- Interface responsiva e moderna com Tailwind CSS
+
+**Melhorias de Robustez:**
+
+- Validação de arrays antes de usar `.map()`
+- Tratamento de campos opcionais (`usage`, `output`)
+- Fallbacks para estados de erro e loading
+- Retry automático em caso de falhas de rede
+
+**Integração Frontend-Backend:**
+
+- Hook customizado `usePosts` utilizando React Query para gerenciamento de estado e cache
+- Serviço `postsService` com tratamento robusto de erros e validação de respostas
+- Componente `PendingPostCard` com ações completas (Editar, Agendar, Publicar, Excluir)
+- Componente `PendingPostsFilters` para filtros avançados (Status, Rede Social, Período)
+- Modal `EditPostModal` para edição de posts
+- Integração com endpoint `GET /the-post-pilot/v1/posts` para listagem de posts do usuário
+- Tratamento de estados de loading, error e empty state em todos os componentes
+
+### Sistema de Gestão de Posts Pendentes
+
+✅ **Implementado:**
+
+- Página dedicada para gerenciamento de posts pendentes (`/app/pending`)
+- KPIs em tempo real com métricas de posts (Pendentes, Agendados, Prontos, Editando)
+- Filtros avançados por status, rede social e período
+- Cards de posts com informações completas:
+  - Input (tema/artigo original)
+  - Output (texto gerado pela IA)
+  - Modelo utilizado (gpt-3.5-turbo, gpt-4, etc.)
+  - Uso detalhado de tokens (prompt, completion, total)
+  - Status do post
+  - Data de criação
+- Ações disponíveis por post:
+  - Editar conteúdo
+  - Agendar publicação
+  - Publicar no LinkedIn (1 click)
+  - Excluir post
+- Modal de edição de posts
+- Integração completa com backend via API RESTful
+- Tratamento robusto de estados (loading, error, empty)
+- Cache e retry automático via React Query
+
+**Arquitetura Frontend:**
+
+- Hook customizado `usePosts` para gerenciamento de estado
+- Serviço `postsService` com tratamento de erros
+- Componentes reutilizáveis e responsivos (mobile-first)
+- Proteção contra valores null/undefined em todos os componentes
+
 ### Próximos Passos
 
-1. **Integração com OpenAI**
+1. **Melhorias na Geração com IA**
 
-   - Configuração de chave API do usuário
-   - Geração de texto baseada em artigos
-   - Personalização de prompts
-   - Cache de resultados
+   - Personalização avançada de prompts
+   - Cache de resultados para reduzir custos
+   - Suporte a múltiplos formatos de post
+   - Ajuste fino de parâmetros (temperature, max_tokens)
 
-2. **Frontend**
-
-   - Dashboard com sugestões
-   - Editor de posts
-   - Configuração de fontes
-   - Histórico de publicações
-
-3. **LinkedIn Integration**
+2. **LinkedIn Integration**
    - OAuth 2.0 para publicação
-   - Escrita de posts
-   - Agendamento
+   - Agendamento de posts
    - Métricas de engajamento
+   - Repostagem automática
+
+3. **Melhorias de Performance**
+   - Cache de artigos pesquisados
+   - Paginação de resultados
+   - Lazy loading de imagens
+   - Otimização de bundle size
 
 ### Histórico Genérico de Publicações
 
@@ -194,10 +300,29 @@ Content-Type: application/json
 ```text
 .
 ├── apps/
-│   ├── web/          # Frontend React + Vite
-│   └── api/          # Backend Go
-├── packages/         # Pacotes compartilhados (futuro)
-├── package.json      # Configuração raiz do monorepo
+│   ├── web/                    # Frontend React + Vite
+│   │   └── src/
+│   │       ├── components/     # Componentes reutilizáveis
+│   │       │   ├── dashboard/   # Componentes do dashboard
+│   │       │   │   ├── PendingPostCard.tsx
+│   │       │   │   ├── PendingPostsFilters.tsx
+│   │       │   │   └── EditPostModal.tsx
+│   │       │   └── ui/         # Componentes UI (shadcn/ui)
+│   │       ├── hooks/           # Hooks customizados
+│   │       │   ├── usePosts.ts
+│   │       │   └── useSuggestions.ts
+│   │       ├── pages/           # Páginas da aplicação
+│   │       │   ├── PendingPosts.tsx
+│   │       │   └── Suggestions.tsx
+│   │       └── services/        # Serviços de API
+│   │           └── posts.service.ts
+│   └── api/                     # Backend Go
+│       └── internal/
+│           ├── app/             # Handlers HTTP
+│           ├── services/        # Lógica de negócio
+│           └── repositories/    # Acesso a dados
+├── packages/                    # Pacotes compartilhados (futuro)
+├── package.json                 # Configuração raiz do monorepo
 └── pnpm-workspace.yaml
 ```
 
@@ -314,15 +439,102 @@ POST /the-post-pilot/v1/posts/generate
 }
 ```
 
+### Listagem de Posts do Usuário
+
+**Endpoint:**
+
+GET /the-post-pilot/v1/posts
+
+**Headers:**
+
+```
+Authorization: Bearer <jwt>
+```
+
+**Exemplo de resposta:**
+
+```json
+[
+  {
+    "id": "682bac2309c40fa708839ee2",
+    "userId": "507f1f77bcf86cd799439011",
+    "input": "Como usar IA para automação de posts",
+    "output": "Descubra como a inteligência artificial pode revolucionar sua estratégia de conteúdo...",
+    "model": "gpt-3.5-turbo",
+    "usage": {
+      "prompt_tokens": 30,
+      "completion_tokens": 100,
+      "total_tokens": 130,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    },
+    "status": "success",
+    "createdAt": "2025-05-19T22:09:39Z"
+  }
+]
+```
+
+**Integração Frontend (React Query):**
+
+```typescript
+import { useQuery } from '@tanstack/react-query'
+import { postsService } from '@/services/posts.service'
+
+export function usePosts() {
+  return useQuery({
+    queryKey: ['posts', 'pending'],
+    queryFn: async () => {
+      const result = await postsService.list()
+      return Array.isArray(result) ? result : []
+    },
+    retry: 1,
+    initialData: [],
+  })
+}
+```
+
 ### Logging e Auditoria
 
 - Cada geração de post é registrada no MongoDB com:
   - ID do usuário
   - Input enviado
   - Output gerado
-  - Modelo e usage
-  - Status e erros (se houver)
-  - Timestamp
-- Permite rastreabilidade e análise de uso da IA.
+  - Modelo utilizado
+  - Uso de tokens (prompt, completion, total)
+  - Status (started, success, error)
+  - Mensagens de erro (se houver)
+  - Timestamp completo
+- Permite rastreabilidade e análise de uso da IA
+- Histórico completo para auditoria e análise de custos
+
+### Arquitetura de Pesquisa de Artigos
+
+O sistema implementa uma arquitetura de busca paralela e diversificada:
+
+1. **Busca Paralela**: Todas as fontes configuradas são consultadas simultaneamente usando goroutines
+2. **Diversificação**: Resultados são intercalados (round-robin) para garantir variedade
+3. **Otimização**: Hacker News usa semáforo para limitar concorrência (máx. 8 requisições simultâneas)
+4. **Resiliência**: Timeouts e tratamento de erros por fonte, sem afetar outras
+5. **Filtros Inteligentes**: Aplicados após a busca para maximizar resultados relevantes
+
+### Tratamento de Erros e Robustez
+
+**Backend:**
+- Validação de entrada em todos os endpoints
+- Tratamento específico de erros da OpenAI (rate limits, timeouts)
+- Logging estruturado com contexto completo
+- Respostas padronizadas de erro
+
+**Frontend:**
+- Proteção contra `null/undefined` em todos os componentes
+- Estados de loading, error e empty state
+- Retry automático via React Query
+- Mensagens de erro amigáveis ao usuário
+- Validação de tipos TypeScript rigorosa
 
 ---
