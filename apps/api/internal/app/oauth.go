@@ -12,6 +12,8 @@ import (
 	"github.com/postpilot/api/internal/models"
 )
 
+const errFailedToReadResponse = "failed to read response: %w"
+
 // OAuthUserInfo represents user information returned from OAuth providers
 type OAuthUserInfo struct {
 	Sub     string
@@ -83,7 +85,7 @@ func (p *LinkedInOAuthProvider) ExchangeCodeForToken(code string) (string, error
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
+		return "", fmt.Errorf(errFailedToReadResponse, err)
 	}
 
 	var tokenResp struct {
@@ -112,7 +114,7 @@ func (p *LinkedInOAuthProvider) FetchUserInfo(token string) (*OAuthUserInfo, err
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, fmt.Errorf(errFailedToReadResponse, err)
 	}
 
 	var userInfo struct {
@@ -187,7 +189,7 @@ func (p *GoogleOAuthProvider) ExchangeCodeForToken(code string) (string, error) 
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
+		return "", fmt.Errorf(errFailedToReadResponse, err)
 	}
 
 	var tokenResp struct {
@@ -216,7 +218,7 @@ func (p *GoogleOAuthProvider) FetchUserInfo(token string) (*OAuthUserInfo, error
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, fmt.Errorf(errFailedToReadResponse, err)
 	}
 
 	var userInfo struct {

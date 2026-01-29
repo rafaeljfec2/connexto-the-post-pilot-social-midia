@@ -4,30 +4,30 @@ import { Button } from '@/components/ui/button'
 import { Calendar, Edit, Send, Trash2 } from 'lucide-react'
 
 interface PendingPostCardProps {
-  input: string
-  output: string
-  model: string
-  usage?: {
-    completion_tokens?: number
-    completion_tokens_details?: {
-      accepted_prediction_tokens?: number
-      audio_tokens?: number
-      reasoning_tokens?: number
-      rejected_prediction_tokens?: number
+  readonly input: string
+  readonly output: string
+  readonly model: string
+  readonly usage?: {
+    readonly completion_tokens?: number
+    readonly completion_tokens_details?: {
+      readonly accepted_prediction_tokens?: number
+      readonly audio_tokens?: number
+      readonly reasoning_tokens?: number
+      readonly rejected_prediction_tokens?: number
     }
-    prompt_tokens?: number
-    prompt_tokens_details?: {
-      audio_tokens?: number
-      cached_tokens?: number
+    readonly prompt_tokens?: number
+    readonly prompt_tokens_details?: {
+      readonly audio_tokens?: number
+      readonly cached_tokens?: number
     }
-    total_tokens?: number
+    readonly total_tokens?: number
   } | null
-  status: string
-  createdAt: string
-  onEdit?: () => void
-  onSchedule?: () => void
-  onPublish?: () => void
-  onDelete?: () => void
+  readonly status: string
+  readonly createdAt: string
+  readonly onEdit?: () => void
+  readonly onSchedule?: () => void
+  readonly onPublish?: () => void
+  readonly onDelete?: () => void
 }
 
 export function PendingPostCard({

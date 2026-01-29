@@ -1,9 +1,10 @@
 import { createContext, useContext, ReactNode, useMemo } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/auth'
+import type { User } from '@/services/auth.service'
 
 interface AuthContextType {
-  user: any
+  user: User | null
   isAuthenticated: boolean
   isLoadingUser: boolean
   googleLogin: () => void
@@ -25,7 +26,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       ...auth,
       user: zustandUser,
       isAuthenticated: !!zustandUser,
-      isLoadingUser: (auth as any).isLoadingUser,
+      isLoadingUser: auth.isLoadingUser,
     }),
     [auth, zustandUser]
   )

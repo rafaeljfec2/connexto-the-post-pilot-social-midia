@@ -1,18 +1,24 @@
+import type { User } from '@/services/auth.service'
+
 const TOKEN_KEY = '@Auth:token'
 const REFRESH_TOKEN_KEY = '@Auth:refreshToken'
 const USER_KEY = '@Auth:user'
 
-function getStorage(persistent: boolean) {
-  return persistent ? localStorage : sessionStorage
-}
-
 export const authUtils = {
-  setToken(token: string, persistent = false): void {
-    getStorage(persistent).setItem(TOKEN_KEY, token)
+  setTokenToLocal(token: string): void {
+    localStorage.setItem(TOKEN_KEY, token)
+  },
+
+  setTokenToSession(token: string): void {
+    sessionStorage.setItem(TOKEN_KEY, token)
+  },
+
+  setToken(token: string): void {
+    this.setTokenToSession(token)
   },
 
   getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY)
+    return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY)
   },
 
   removeToken(): void {
@@ -20,12 +26,20 @@ export const authUtils = {
     sessionStorage.removeItem(TOKEN_KEY)
   },
 
-  setRefreshToken(refreshToken: string, persistent = false): void {
-    getStorage(persistent).setItem(REFRESH_TOKEN_KEY, refreshToken)
+  setRefreshTokenToLocal(refreshToken: string): void {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+  },
+
+  setRefreshTokenToSession(refreshToken: string): void {
+    sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+  },
+
+  setRefreshToken(refreshToken: string): void {
+    this.setRefreshTokenToSession(refreshToken)
   },
 
   getRefreshToken(): string | null {
-    return localStorage.getItem(REFRESH_TOKEN_KEY) || sessionStorage.getItem(REFRESH_TOKEN_KEY)
+    return localStorage.getItem(REFRESH_TOKEN_KEY) ?? sessionStorage.getItem(REFRESH_TOKEN_KEY)
   },
 
   removeRefreshToken(): void {
@@ -33,16 +47,24 @@ export const authUtils = {
     sessionStorage.removeItem(REFRESH_TOKEN_KEY)
   },
 
-  setUser(user: any, persistent = false): void {
-    getStorage(persistent).setItem(USER_KEY, JSON.stringify(user))
+  setUserToLocal(user: User): void {
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
   },
 
-  getUser(): any | null {
-    const user = localStorage.getItem(USER_KEY)
-    if (!user) {
-      return sessionStorage.getItem(USER_KEY)
-    }
-    return user ? JSON.parse(user) : null
+  setUserToSession(user: User): void {
+    sessionStorage.setItem(USER_KEY, JSON.stringify(user))
+  },
+
+  setUser(user: User): void {
+    this.setUserToSession(user)
+  },
+
+  getUser(): User | null {
+    const localUser = localStorage.getItem(USER_KEY)
+    const sessionUser = sessionStorage.getItem(USER_KEY)
+    const userStr = localUser ?? sessionUser
+
+    return userStr ? JSON.parse(userStr) : null
   },
 
   removeUser(): void {

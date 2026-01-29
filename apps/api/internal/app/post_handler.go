@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const endpointPostsGenerate = "/posts/generate"
+
 type PostHandler struct {
 	PostService services.PostService
 	AuthService services.AuthService
@@ -35,28 +37,28 @@ func NewPostHandler(postService services.PostService, authService services.AuthS
 func (h *PostHandler) Generate(c *fiber.Ctx) error {
 	user, err := GetUserFromContext(c, h.AuthService)
 	if err != nil {
-		return HandleUserContextError(c, err, "/posts/generate")
+		return HandleUserContextError(c, err, endpointPostsGenerate)
 	}
 	userId := user.ID.Hex()
 
 	var req GeneratePostRequest
 	if err := c.BodyParser(&req); err != nil {
-		log.Logger.Warn("Invalid generate post payload", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+		log.Logger.Warn("Invalid generate post payload", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", endpointPostsGenerate))
 		return BadRequestError(c, err.Error())
 	}
 
 	if err := ValidateStruct(&req); err != nil {
-		log.Logger.Warn("Generate post validation failed", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+		log.Logger.Warn("Generate post validation failed", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", endpointPostsGenerate))
 		return ValidationError(c, err.Error())
 	}
 
 	resp, err := h.PostService.GeneratePost(c.Context(), user, req.Topic)
 	if err != nil {
-		log.Logger.Error("Failed to generate post", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+		log.Logger.Error("Failed to generate post", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", endpointPostsGenerate))
 		return InternalError(c, err.Error())
 	}
 
-	log.Logger.Info("Post generated", zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+	log.Logger.Info("Post generated", zap.String("userId", userId), zap.String("endpoint", endpointPostsGenerate))
 	return c.Status(http.StatusOK).JSON(resp)
 }
 

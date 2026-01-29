@@ -16,6 +16,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const endpointArticlesSuggestions = "/articles/suggestions"
+
 type ArticleHandler struct {
 	ArticleService services.ArticleService
 	AuthService    services.AuthService
@@ -43,7 +45,7 @@ func NewArticleHandler(articleService services.ArticleService, authService servi
 func (h *ArticleHandler) GetSuggestions(c *fiber.Ctx) error {
 	user, err := GetUserFromContext(c, h.AuthService)
 	if err != nil {
-		return HandleUserContextError(c, err, "/articles/suggestions")
+		return HandleUserContextError(c, err, endpointArticlesSuggestions)
 	}
 	userId := user.ID.Hex()
 
@@ -79,10 +81,10 @@ func (h *ArticleHandler) GetSuggestions(c *fiber.Ctx) error {
 
 	articles, err := h.ArticleService.FetchSuggestions(c.Context(), user, q, from, to, tags, limit)
 	if err != nil {
-		log.Logger.Error("Failed to fetch article suggestions", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/articles/suggestions"))
+		log.Logger.Error("Failed to fetch article suggestions", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", endpointArticlesSuggestions))
 		return c.Status(http.StatusInternalServerError).JSON(map[string]interface{}{"error": err.Error()})
 	}
-	log.Logger.Info("Article suggestions fetched", zap.String("userId", userId), zap.String("endpoint", "/articles/suggestions"), zap.Int("count", len(articles)))
+	log.Logger.Info("Article suggestions fetched", zap.String("userId", userId), zap.String("endpoint", endpointArticlesSuggestions), zap.Int("count", len(articles)))
 	return c.Status(http.StatusOK).JSON(articles)
 }
 

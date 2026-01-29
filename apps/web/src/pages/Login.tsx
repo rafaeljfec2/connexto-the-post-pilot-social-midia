@@ -129,7 +129,8 @@ export function Login() {
       setIsSocialLoading(true)
       handleProviderCallback(code, provider)
     }
-  }, [searchParams, handleGoogleCallback, handleLinkedInCallback, queryClient, setToken, setUser])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   useEffect(() => {
     if (isSocialLoading && isAuthenticated && !isLoadingUser && user) {

@@ -29,13 +29,13 @@ export function ThemeProvider({
   defaultTheme = 'system',
   storageKey = STORAGE_KEY,
 }: Readonly<ThemeProviderProps>) {
-  const [theme, setThemeState] = useState<Theme>(
+  const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) ?? defaultTheme
   )
   const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('light')
 
   useEffect(() => {
-    const root = window.document.documentElement
+    const root = globalThis.document.documentElement
 
     const applyTheme = (themeToApply: 'dark' | 'light') => {
       root.classList.remove('light', 'dark')
@@ -44,12 +44,12 @@ export function ThemeProvider({
     }
 
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const systemTheme = globalThis.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
       applyTheme(systemTheme)
 
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const mediaQuery = globalThis.matchMedia('(prefers-color-scheme: dark)')
       const listener = (e: MediaQueryListEvent) => {
         applyTheme(e.matches ? 'dark' : 'light')
       }
@@ -67,7 +67,7 @@ export function ThemeProvider({
       resolvedTheme,
       setTheme: (newTheme: Theme) => {
         localStorage.setItem(storageKey, newTheme)
-        setThemeState(newTheme)
+        setTheme(newTheme)
       },
     }),
     [theme, resolvedTheme, storageKey]

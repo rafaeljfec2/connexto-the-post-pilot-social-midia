@@ -65,26 +65,39 @@ export function Subscription() {
             {method === 'card' && (
               <form className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Número do cartão</label>
-                  <Input placeholder="1234 1234 1234 1234" maxLength={19} inputMode="numeric" />
+                  <label htmlFor="card-number" className="text-sm font-medium">
+                    Número do cartão
+                  </label>
+                  <Input
+                    id="card-number"
+                    placeholder="1234 1234 1234 1234"
+                    maxLength={19}
+                    inputMode="numeric"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Validade</label>
-                    <Input placeholder="MM / AA" maxLength={5} />
+                    <label htmlFor="card-expiry" className="text-sm font-medium">
+                      Validade
+                    </label>
+                    <Input id="card-expiry" placeholder="MM / AA" maxLength={5} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">CVC</label>
-                    <Input placeholder="123" maxLength={4} />
+                    <label htmlFor="card-cvc" className="text-sm font-medium">
+                      CVC
+                    </label>
+                    <Input id="card-cvc" placeholder="123" maxLength={4} />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">País</label>
+                  <label htmlFor="card-country" className="text-sm font-medium">
+                    País
+                  </label>
                   <Select
                     value={form.country}
                     onValueChange={country => setForm(f => ({ ...f, country }))}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id="card-country" className="w-full">
                       <SelectValue placeholder="Selecione o país" />
                     </SelectTrigger>
                     <SelectContent>
@@ -126,8 +139,11 @@ export function Subscription() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-3">
-              {invoices.map((item, idx) => (
-                <li key={idx} className="flex items-center justify-between rounded-lg border p-3">
+              {invoices.map(item => (
+                <li
+                  key={`${item.date}-${item.amount}`}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="size-4 text-success" />
                     <div>

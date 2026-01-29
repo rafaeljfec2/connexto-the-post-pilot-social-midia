@@ -80,14 +80,14 @@ export function Suggestions() {
     }
   }
 
-  const handleSchedule = (_article: Article) => {
+  const handleSchedule = () => {
     toast({
       title: 'Em breve',
       description: 'Agendamento será implementado em breve.',
     })
   }
 
-  const handleDiscard = (_article: Article) => {
+  const handleDiscard = () => {
     toast({
       title: 'Sugestão descartada',
       description: 'Atualize para ver novas sugestões.',

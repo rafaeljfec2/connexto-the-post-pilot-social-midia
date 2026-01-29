@@ -17,6 +17,12 @@ interface NavGroup {
   readonly items: readonly NavItem[]
 }
 
+interface NavContentProps {
+  readonly navigation: readonly NavGroup[]
+  readonly isActive: (href: string) => boolean
+  readonly onNavigate: (href: string) => void
+}
+
 const navigation: readonly NavGroup[] = [
   {
     title: 'Criar',
@@ -70,24 +76,8 @@ const navigation: readonly NavGroup[] = [
   },
 ]
 
-export function Sidebar() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [isOpen, setIsOpen] = useState(false)
-
-  const handleNavigation = (href: string) => {
-    navigate(href)
-    setIsOpen(false)
-  }
-
-  const isActive = (href: string) => {
-    if (href === '/app') {
-      return location.pathname === '/app'
-    }
-    return location.pathname.startsWith(href)
-  }
-
-  const NavContent = () => (
+function NavContent({ navigation, isActive, onNavigate }: Readonly<NavContentProps>) {
+  return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center border-b px-6">
         <div className="flex items-center gap-2">
@@ -116,7 +106,7 @@ export function Sidebar() {
                         'w-full justify-start gap-3 font-normal',
                         active && 'bg-primary/10 font-medium text-primary hover:bg-primary/15'
                       )}
-                      onClick={() => handleNavigation(item.href)}
+                      onClick={() => onNavigate(item.href)}
                     >
                       <item.icon
                         className={cn('size-4', active ? 'text-primary' : 'text-muted-foreground')}
@@ -136,6 +126,24 @@ export function Sidebar() {
       </div>
     </div>
   )
+}
+
+export function Sidebar() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleNavigation = (href: string) => {
+    navigate(href)
+    setIsOpen(false)
+  }
+
+  const isActive = (href: string) => {
+    if (href === '/app') {
+      return location.pathname === '/app'
+    }
+    return location.pathname.startsWith(href)
+  }
 
   return (
     <>
@@ -151,12 +159,12 @@ export function Sidebar() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <NavContent />
+          <NavContent navigation={navigation} isActive={isActive} onNavigate={handleNavigation} />
         </SheetContent>
       </Sheet>
 
       <aside className="hidden w-64 shrink-0 border-r bg-card md:block">
-        <NavContent />
+        <NavContent navigation={navigation} isActive={isActive} onNavigate={handleNavigation} />
       </aside>
     </>
   )

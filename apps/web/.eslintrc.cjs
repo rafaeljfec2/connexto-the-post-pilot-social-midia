@@ -12,11 +12,13 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['react-refresh', '@typescript-eslint', 'tailwindcss'],
   rules: {
-    'react-refresh/only-export-components': [
+    'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    'tailwindcss/no-custom-classname': [
       'warn',
-      { allowConstantExport: true },
+      {
+        whitelist: ['destructive', 'origin-top-center'],
+      },
     ],
-    'tailwindcss/no-custom-classname': 'warn',
     'tailwindcss/classnames-order': 'warn',
     'tailwindcss/enforces-negative-arbitrary-values': 'warn',
     'tailwindcss/enforces-shorthand': 'warn',
@@ -30,4 +32,16 @@ module.exports = {
       config: 'tailwind.config.js',
     },
   },
-} 
+  overrides: [
+    {
+      files: [
+        'src/components/ui/**/*.tsx',
+        'src/contexts/**/*.tsx',
+        'src/components/ThemeProvider.tsx',
+      ],
+      rules: {
+        'react-refresh/only-export-components': 'off',
+      },
+    },
+  ],
+}

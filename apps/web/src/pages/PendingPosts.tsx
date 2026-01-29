@@ -12,6 +12,31 @@ import { Plus, Loader2, FileText, Clock, Calendar, RefreshCw, Send } from 'lucid
 
 type TabValue = 'pending' | 'scheduled' | 'published'
 
+interface EmptyStateProps {
+  readonly message: string
+  readonly onCreatePost: () => void
+}
+
+function EmptyState({ message, onCreatePost }: EmptyStateProps) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col items-center gap-4 py-12">
+        <div className="rounded-full bg-muted p-4">
+          <FileText className="size-8 text-muted-foreground" />
+        </div>
+        <div className="space-y-1 text-center">
+          <p className="font-medium">Nenhum post encontrado</p>
+          <p className="text-sm text-muted-foreground">{message}</p>
+        </div>
+        <Button onClick={onCreatePost} className="gap-2">
+          <Plus className="size-4" />
+          Criar novo post
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function PendingPosts() {
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -61,7 +86,7 @@ export function PendingPosts() {
     }
   }
 
-  const handleSchedule = (_post: Post) => {
+  const handleSchedule = () => {
     toast({
       title: 'Em breve',
       description: 'Agendamento será implementado em breve.',
@@ -84,23 +109,7 @@ export function PendingPosts() {
     }
   }
 
-  const EmptyState = ({ message }: { readonly message: string }) => (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-4 py-12">
-        <div className="rounded-full bg-muted p-4">
-          <FileText className="size-8 text-muted-foreground" />
-        </div>
-        <div className="space-y-1 text-center">
-          <p className="font-medium">Nenhum post encontrado</p>
-          <p className="text-sm text-muted-foreground">{message}</p>
-        </div>
-        <Button onClick={() => navigate('/app/suggestions')} className="gap-2">
-          <Plus className="size-4" />
-          Criar novo post
-        </Button>
-      </CardContent>
-    </Card>
-  )
+  const handleCreatePost = () => navigate('/app/suggestions')
 
   return (
     <div className="space-y-6">
@@ -179,7 +188,10 @@ export function PendingPosts() {
           <>
             <TabsContent value="pending" className="space-y-3">
               {pendingPosts.length === 0 ? (
-                <EmptyState message="Crie um post a partir das sugestões da IA." />
+                <EmptyState
+                  message="Crie um post a partir das sugestões da IA."
+                  onCreatePost={handleCreatePost}
+                />
               ) : (
                 pendingPosts.map(post => (
                   <PostListItem
@@ -187,7 +199,7 @@ export function PendingPosts() {
                     post={post}
                     onEdit={() => handleEdit(post)}
                     onPublish={() => handlePublish(post)}
-                    onSchedule={() => handleSchedule(post)}
+                    onSchedule={() => handleSchedule()}
                     onDelete={() => handleDelete(post)}
                   />
                 ))
@@ -196,7 +208,10 @@ export function PendingPosts() {
 
             <TabsContent value="scheduled" className="space-y-3">
               {scheduledPosts.length === 0 ? (
-                <EmptyState message="Agende posts para publicação automática." />
+                <EmptyState
+                  message="Agende posts para publicação automática."
+                  onCreatePost={handleCreatePost}
+                />
               ) : (
                 scheduledPosts.map(post => (
                   <PostListItem
@@ -204,7 +219,7 @@ export function PendingPosts() {
                     post={post}
                     onEdit={() => handleEdit(post)}
                     onPublish={() => handlePublish(post)}
-                    onSchedule={() => handleSchedule(post)}
+                    onSchedule={() => handleSchedule()}
                     onDelete={() => handleDelete(post)}
                   />
                 ))
@@ -213,7 +228,10 @@ export function PendingPosts() {
 
             <TabsContent value="published" className="space-y-3">
               {publishedPosts.length === 0 ? (
-                <EmptyState message="Posts publicados aparecerão aqui." />
+                <EmptyState
+                  message="Posts publicados aparecerão aqui."
+                  onCreatePost={handleCreatePost}
+                />
               ) : (
                 publishedPosts.map(post => (
                   <PostListItem
@@ -221,7 +239,7 @@ export function PendingPosts() {
                     post={post}
                     onEdit={() => handleEdit(post)}
                     onPublish={() => handlePublish(post)}
-                    onSchedule={() => handleSchedule(post)}
+                    onSchedule={() => handleSchedule()}
                     onDelete={() => handleDelete(post)}
                   />
                 ))

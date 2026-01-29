@@ -46,7 +46,7 @@ export function EditPostModal({ post, onClose, onSave }: EditPostModalProps) {
           />
           <div className="mt-2 text-xs text-muted-foreground">
             <span className="font-mono">Modelo: {post.model}</span>
-            <span className="ml-4">Tokens: {post.usage.total_tokens}</span>
+            <span className="ml-4">Tokens: {post.usage?.total_tokens ?? 0}</span>
           </div>
           <div className="mt-4">
             <label className="mb-1 block text-xs font-semibold">Pré-visualização:</label>

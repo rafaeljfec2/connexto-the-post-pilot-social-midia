@@ -5,18 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { useState } from 'react'
-import {
-  Linkedin,
-  Twitter,
-  Facebook,
-  Instagram,
-  CheckCircle2,
-  XCircle,
-  User,
-  Mail,
-  Edit2,
-  ExternalLink,
-} from 'lucide-react'
+import { CheckCircle2, XCircle, User, Mail, Edit2, ExternalLink } from 'lucide-react'
+import { FaLinkedin, FaXTwitter, FaFacebook, FaInstagram } from 'react-icons/fa6'
 import { useAuth } from '@/hooks/useAuth'
 
 interface SocialConnection {
@@ -32,25 +22,25 @@ export function Profile() {
   const [socials] = useState<SocialConnection[]>([
     {
       name: 'LinkedIn',
-      icon: <Linkedin className="size-5" />,
+      icon: <FaLinkedin className="size-5" />,
       connected: true,
       color: 'text-[#0A66C2]',
     },
     {
-      name: 'Twitter',
-      icon: <Twitter className="size-5" />,
+      name: 'X',
+      icon: <FaXTwitter className="size-5" />,
       connected: false,
-      color: 'text-[#1DA1F2]',
+      color: 'text-foreground',
     },
     {
       name: 'Facebook',
-      icon: <Facebook className="size-5" />,
+      icon: <FaFacebook className="size-5" />,
       connected: false,
       color: 'text-[#1877F2]',
     },
     {
       name: 'Instagram',
-      icon: <Instagram className="size-5" />,
+      icon: <FaInstagram className="size-5" />,
       connected: false,
       color: 'text-[#E4405F]',
     },

@@ -17,7 +17,12 @@ import (
 	"go.uber.org/zap"
 )
 
-const bearerPrefix = "Bearer "
+const (
+	bearerPrefix                = "Bearer "
+	endpointAuthRegister        = "/auth/register"
+	endpointAuthLogin           = "/auth/login"
+	errFailedToReadResponseBody = "failed to read response body: %w"
+)
 
 // AuthHandler handles authentication related requests
 type AuthHandler struct {
@@ -42,22 +47,22 @@ func NewAuthHandler(authService services.AuthService) *AuthHandler {
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var req RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
-		log.Logger.Warn("Invalid register payload", zap.Error(err), zap.String("endpoint", "/auth/register"))
+		log.Logger.Warn("Invalid register payload", zap.Error(err), zap.String("endpoint", endpointAuthRegister))
 		return BadRequestError(c, err.Error())
 	}
 
 	if err := ValidateStruct(&req); err != nil {
-		log.Logger.Warn("Register validation failed", zap.Error(err), zap.String("endpoint", "/auth/register"))
+		log.Logger.Warn("Register validation failed", zap.Error(err), zap.String("endpoint", endpointAuthRegister))
 		return ValidationError(c, err.Error())
 	}
 
 	user, err := h.AuthService.Register(c.Context(), req.Name, req.Email, req.Password)
 	if err != nil {
-		log.Logger.Warn("Register failed", zap.Error(err), zap.String("email", req.Email), zap.String("endpoint", "/auth/register"))
+		log.Logger.Warn("Register failed", zap.Error(err), zap.String("email", req.Email), zap.String("endpoint", endpointAuthRegister))
 		return BadRequestError(c, err.Error())
 	}
 
-	log.Logger.Info("User registered", zap.String("userId", user.ID.Hex()), zap.String("email", user.Email), zap.String("endpoint", "/auth/register"))
+	log.Logger.Info("User registered", zap.String("userId", user.ID.Hex()), zap.String("email", user.Email), zap.String("endpoint", endpointAuthRegister))
 	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
@@ -79,22 +84,22 @@ type loginResponse struct {
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req LoginRequest
 	if err := c.BodyParser(&req); err != nil {
-		log.Logger.Warn("Invalid login payload", zap.Error(err), zap.String("endpoint", "/auth/login"))
+		log.Logger.Warn("Invalid login payload", zap.Error(err), zap.String("endpoint", endpointAuthLogin))
 		return BadRequestError(c, err.Error())
 	}
 
 	if err := ValidateStruct(&req); err != nil {
-		log.Logger.Warn("Login validation failed", zap.Error(err), zap.String("endpoint", "/auth/login"))
+		log.Logger.Warn("Login validation failed", zap.Error(err), zap.String("endpoint", endpointAuthLogin))
 		return ValidationError(c, err.Error())
 	}
 
 	user, token, err := h.AuthService.Login(c.Context(), req.Email, req.Password)
 	if err != nil {
-		log.Logger.Warn("Login failed", zap.Error(err), zap.String("email", req.Email), zap.String("endpoint", "/auth/login"))
+		log.Logger.Warn("Login failed", zap.Error(err), zap.String("email", req.Email), zap.String("endpoint", endpointAuthLogin))
 		return UnauthorizedError(c, "Invalid credentials")
 	}
 
-	log.Logger.Info("User login success", zap.String("userId", user.ID.Hex()), zap.String("email", user.Email), zap.String("endpoint", "/auth/login"))
+	log.Logger.Info("User login success", zap.String("userId", user.ID.Hex()), zap.String("email", user.Email), zap.String("endpoint", endpointAuthLogin))
 	return c.Status(fiber.StatusOK).JSON(loginResponse{User: user, Token: token})
 }
 
@@ -289,7 +294,7 @@ func fetchLinkedInUserInfo(token string) (*linkedinUserInfo, error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf(errFailedToReadResponseBody, err)
 	}
 
 	var userInfo linkedinUserInfo
@@ -314,7 +319,7 @@ func exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI stri
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response body: %w", err)
+		return "", fmt.Errorf(errFailedToReadResponseBody, err)
 	}
 
 	var tokenResp linkedinTokenResponse
@@ -445,7 +450,7 @@ func fetchLinkedInPersonURN(accessToken string) (string, error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response body: %w", err)
+		return "", fmt.Errorf(errFailedToReadResponseBody, err)
 	}
 	log.Logger.Debug("LinkedIn /v2/userinfo response", zap.String("body", string(body)))
 	var data struct {

@@ -66,7 +66,7 @@ export function useAuth() {
     mutationFn: async () => {
       clearUserData(queryClient)
       const url = await authService.getGoogleConsentUrl()
-      window.location.href = url
+      globalThis.location.href = url
     },
   })
 
@@ -74,7 +74,7 @@ export function useAuth() {
     mutationFn: async () => {
       clearUserData(queryClient)
       const url = await authService.getLinkedInConsentUrl()
-      window.location.href = url
+      globalThis.location.href = url
     },
   })
 
@@ -144,13 +144,13 @@ export function useAuth() {
     user,
     isAuthenticated: !!user,
     isLoadingUser,
-    login: login.mutate,
+    login: login.mutateAsync,
     isLoggingIn: login.isPending,
     googleLogin: googleLogin.mutate,
     linkedInLogin: linkedInLogin.mutate,
-    handleGoogleCallback: handleGoogleCallback.mutate,
-    handleLinkedInCallback: handleLinkedInCallback.mutate,
-    handleLinkedInPublishCallback: handleLinkedInPublishCallback.mutate,
+    handleGoogleCallback: handleGoogleCallback.mutateAsync,
+    handleLinkedInCallback: handleLinkedInCallback.mutateAsync,
+    handleLinkedInPublishCallback: handleLinkedInPublishCallback.mutateAsync,
     logout,
   }
 }
