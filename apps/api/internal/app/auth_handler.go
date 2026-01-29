@@ -385,10 +385,7 @@ func (h *AuthHandler) DisconnectLinkedIn(c *fiber.Ctx) error {
 		return HandleUserContextError(c, err, "/auth/linkedin/disconnect")
 	}
 
-	user.LinkedinAccessToken = ""
-	user.LinkedinPersonUrn = ""
-
-	err = h.AuthService.UpdateUser(c.Context(), user)
+	err = h.AuthService.ClearLinkedInToken(c.Context(), user.ID.Hex())
 	if err != nil {
 		log.Logger.Error("Failed to disconnect LinkedIn", zap.Error(err), zap.String("userId", user.ID.Hex()))
 		return InternalError(c, "Failed to disconnect LinkedIn")

@@ -19,6 +19,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	Update(ctx context.Context, user *models.User) error
 	FindByID(ctx context.Context, id string) (*models.User, error)
+	ClearLinkedInToken(ctx context.Context, userID primitive.ObjectID) error
 }
 
 type userRepository struct {
@@ -107,4 +108,22 @@ func (r *userRepository) FindByID(ctx context.Context, id string) (*models.User,
 	}
 	log.Logger.Info("User found by ID", zap.String("userId", user.ID.Hex()))
 	return user, nil
+}
+
+func (r *userRepository) ClearLinkedInToken(ctx context.Context, userID primitive.ObjectID) error {
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"_id": userID},
+		bson.M{"$unset": bson.M{
+			"linkedinAccessToken":  "",
+			"linkedinRefreshToken": "",
+			"linkedinPersonUrn":    "",
+		}},
+	)
+	if err != nil {
+		log.Logger.Error("Failed to clear LinkedIn token", zap.String("userId", userID.Hex()), zap.Error(err))
+		return err
+	}
+	log.Logger.Info("LinkedIn token cleared", zap.String("userId", userID.Hex()))
+	return nil
 }

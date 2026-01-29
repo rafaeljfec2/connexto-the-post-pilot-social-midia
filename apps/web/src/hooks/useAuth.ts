@@ -139,10 +139,8 @@ export function useAuth() {
   }
 
   const refreshUser = async () => {
-    const updatedUser = await queryClient.fetchQuery({
-      queryKey: ['user'],
-      queryFn: authService.getCurrentUser,
-    })
+    await queryClient.invalidateQueries({ queryKey: ['user'] })
+    const updatedUser = await authService.getCurrentUser()
     if (updatedUser) {
       setUser(updatedUser)
       authUtils.setUser(updatedUser)

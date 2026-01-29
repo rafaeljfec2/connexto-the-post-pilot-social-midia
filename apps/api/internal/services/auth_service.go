@@ -32,6 +32,7 @@ type AuthService interface {
 	// Novos métodos
 	GetUserByID(ctx context.Context, id string) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
+	ClearLinkedInToken(ctx context.Context, userID string) error
 }
 
 type authService struct {
@@ -225,4 +226,12 @@ func (s *authService) GetUserByID(ctx context.Context, id string) (*models.User,
 
 func (s *authService) UpdateUser(ctx context.Context, user *models.User) error {
 	return s.repo.Update(ctx, user)
+}
+
+func (s *authService) ClearLinkedInToken(ctx context.Context, userID string) error {
+	objID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+	return s.repo.ClearLinkedInToken(ctx, objID)
 }
