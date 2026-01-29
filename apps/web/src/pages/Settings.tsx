@@ -79,7 +79,7 @@ export function Settings() {
         openaiModel: user.openAiModel ?? 'gpt-4',
         dataSources:
           user.dataSources && user.dataSources.length > 0
-            ? user.dataSources.map((ds) => ({
+            ? user.dataSources.map(ds => ({
                 type: ds.type ?? 'rss',
                 url: ds.url ?? '',
                 tags: ds.tags ?? [],
@@ -95,8 +95,8 @@ export function Settings() {
 
     try {
       const validDataSources = data.dataSources
-        .filter((ds) => ds.url.trim() !== '')
-        .map((ds) => ({
+        .filter(ds => ds.url.trim() !== '')
+        .map(ds => ({
           type: ds.type,
           url: ds.url,
           tags: ds.tags ?? [],
@@ -120,7 +120,7 @@ export function Settings() {
       await refreshUser()
 
       // Limpa o campo de API key após salvar
-      reset((prev) => ({ ...prev, openaiApiKey: '' }))
+      reset(prev => ({ ...prev, openaiApiKey: '' }))
 
       toast({
         title: 'Configurações salvas',
@@ -178,10 +178,12 @@ export function Settings() {
               <div className="relative">
                 <Input
                   id="openaiApiKey"
-                  placeholder="sk-..."
+                  placeholder={hasApiKeyConfigured ? 'Deixe vazio para manter a atual' : 'sk-...'}
                   type={showApiKey ? 'text' : 'password'}
                   autoComplete="off"
-                  {...register('openaiApiKey', { required: 'API Key é obrigatória' })}
+                  {...register('openaiApiKey', {
+                    required: hasApiKeyConfigured ? false : 'API Key é obrigatória',
+                  })}
                   className="pr-10"
                 />
                 <Button

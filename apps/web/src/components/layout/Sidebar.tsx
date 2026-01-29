@@ -79,7 +79,7 @@ const navigation: readonly NavGroup[] = [
 function NavContent({ navigation, isActive, onNavigate }: Readonly<NavContentProps>) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center border-b px-6">
+      <div className="flex h-14 items-center border-b px-6">
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
             <Send className="size-4 text-primary-foreground" />
