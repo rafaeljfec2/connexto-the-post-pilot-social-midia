@@ -7,6 +7,7 @@ import { PostListItem } from '@/components/posts/PostListItem'
 import { EditPostModal } from '@/components/dashboard/EditPostModal'
 import { usePosts, usePublishToLinkedIn, useDeletePost } from '@/hooks/usePosts'
 import { useToast } from '@/components/ui/use-toast'
+import { translateError } from '@/utils/errorMessages'
 import type { Post } from '@/services/posts.service'
 import { Plus, Loader2, FileText, Clock, Calendar, RefreshCw, Send } from 'lucide-react'
 
@@ -75,12 +76,10 @@ export function PendingPosts() {
         description: 'Seu post foi publicado no LinkedIn com sucesso.',
       })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
+      const { title, description } = translateError(err)
       toast({
-        title: 'Erro ao publicar',
-        description: errorMessage.includes('token')
-          ? 'Reconecte sua conta do LinkedIn nas configurações.'
-          : errorMessage,
+        title,
+        description,
         variant: 'destructive',
       })
     }

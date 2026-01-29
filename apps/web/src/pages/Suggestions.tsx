@@ -9,6 +9,7 @@ import { SuggestionCard } from '@/components/suggestions/SuggestionCard'
 import { useSuggestions, SuggestionsFilters } from '@/hooks/useSuggestions'
 import { useGeneratePost } from '@/hooks/usePosts'
 import { useToast } from '@/components/ui/use-toast'
+import { translateError } from '@/utils/errorMessages'
 import type { Article } from '@/services/suggestions.service'
 import {
   Sparkles,
@@ -74,21 +75,12 @@ export function Suggestions() {
         state: { generatedContent: response, highlight: response.logId },
       })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
-
-      if (errorMessage.includes('API') || errorMessage.includes('key')) {
-        toast({
-          title: 'Configure sua API Key',
-          description: 'Vá em Configurações e adicione sua chave da OpenAI.',
-          variant: 'destructive',
-        })
-      } else {
-        toast({
-          title: 'Erro ao gerar post',
-          description: errorMessage,
-          variant: 'destructive',
-        })
-      }
+      const { title, description } = translateError(err)
+      toast({
+        title,
+        description,
+        variant: 'destructive',
+      })
     } finally {
       setGeneratingId(null)
     }
@@ -135,21 +127,12 @@ export function Suggestions() {
         state: { generatedContent: response, highlight: response.logId },
       })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
-
-      if (errorMessage.includes('API') || errorMessage.includes('key')) {
-        toast({
-          title: 'Configure sua API Key',
-          description: 'Vá em Configurações e adicione sua chave da OpenAI.',
-          variant: 'destructive',
-        })
-      } else {
-        toast({
-          title: 'Erro ao gerar post',
-          description: errorMessage,
-          variant: 'destructive',
-        })
-      }
+      const { title, description } = translateError(err)
+      toast({
+        title,
+        description,
+        variant: 'destructive',
+      })
     } finally {
       setIsGeneratingManual(false)
     }
