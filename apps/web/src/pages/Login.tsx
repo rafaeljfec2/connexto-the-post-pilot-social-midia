@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useToast } from '@/components/ui/use-toast'
-import { Loader2, Eye, EyeOff } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Send } from 'lucide-react'
 import { FcGoogle } from 'react-icons/fc'
 import { SiLinkedin } from 'react-icons/si'
 import { useQueryClient } from '@tanstack/react-query'
@@ -61,13 +61,11 @@ export function Login() {
     },
   })
 
-  // Foco automático no primeiro campo
   useEffect(() => {
     setFocus('email')
   }, [setFocus])
 
   const handleAuthError = (error: unknown, provider?: AuthProvider) => {
-    console.error('Erro na autenticação:', error)
     const errorMessage =
       error instanceof Error ? error.message : 'Não foi possível autenticar. Tente novamente.'
 
@@ -153,111 +151,142 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-6 sm:px-6 md:px-8">
-      <div className="mx-auto w-full max-w-md space-y-8 rounded-xl border border-border bg-card p-4 shadow-lg sm:p-6 md:p-8">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold md:text-3xl">The Post Pilot</h1>
-          <p className="text-base text-muted-foreground md:text-lg">
-            Gerencie e automatize seus posts em redes sociais com inteligência artificial
+    <div className="flex min-h-screen">
+      <div className="hidden items-center justify-center bg-primary p-12 lg:flex lg:w-1/2">
+        <div className="max-w-md text-primary-foreground">
+          <div className="mb-8 flex items-center gap-3">
+            <div className="flex size-12 items-center justify-center rounded-xl bg-primary-foreground/20">
+              <Send className="size-6 text-primary-foreground" />
+            </div>
+            <span className="text-2xl font-bold">Post Pilot</span>
+          </div>
+          <h1 className="mb-4 text-4xl font-bold">
+            Automatize seus posts com Inteligência Artificial
+          </h1>
+          <p className="text-lg text-primary-foreground/80">
+            Crie, agende e publique conteúdo para suas redes sociais de forma inteligente e
+            eficiente.
           </p>
         </div>
+      </div>
 
-        {isSocialLoading ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Aguarde, autenticando...</span>
+      <div className="flex w-full items-center justify-center px-4 py-8 sm:px-6 md:px-8 lg:w-1/2">
+        <div className="mx-auto w-full max-w-sm space-y-6">
+          <div className="mb-4 flex items-center justify-center gap-2 lg:hidden">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary">
+              <Send className="size-5 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-bold">Post Pilot</span>
           </div>
-        ) : (
-          <>
-            <div className="space-y-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex w-full items-center justify-center gap-2"
-                onClick={() => googleLogin()}
-                disabled={isLoggingIn}
-              >
-                <FcGoogle className="h-5 w-5" /> Entrar com Google
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="flex w-full items-center justify-center gap-2"
-                onClick={() => linkedInLogin()}
-                disabled={isLoggingIn}
-              >
-                <SiLinkedin className="h-5 w-5 text-[#0077B5]" /> Entrar com LinkedIn
-              </Button>
-            </div>
 
-            <div className="my-2 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">ou entre com email</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
+          <div className="space-y-1 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight">Bem-vindo de volta</h2>
+            <p className="text-sm text-muted-foreground">Entre na sua conta para continuar</p>
+          </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  autoComplete="email"
-                  {...register('email')}
-                />
-                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          {isSocialLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="mb-4 size-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Aguarde, autenticando...</span>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full gap-2"
+                  onClick={() => googleLogin()}
+                  disabled={isLoggingIn}
+                >
+                  <FcGoogle className="size-5" />
+                  Continuar com Google
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full gap-2"
+                  onClick={() => linkedInLogin()}
+                  disabled={isLoggingIn}
+                >
+                  <SiLinkedin className="size-5 text-[#0077B5]" />
+                  Continuar com LinkedIn
+                </Button>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">ou</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
                   <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••"
-                    autoComplete="current-password"
-                    {...register('password')}
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    autoComplete="email"
+                    className="h-11"
+                    {...register('email')}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                  {errors.email && (
+                    <p className="text-xs text-destructive">{errors.email.message}</p>
+                  )}
                 </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
-                )}
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="rememberMe" {...register('rememberMe')} />
-                  <Label htmlFor="rememberMe" className="text-sm font-normal">
-                    Manter conectado
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      className="h-11 pr-10"
+                      {...register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-xs text-destructive">{errors.password.message}</p>
+                  )}
                 </div>
-                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                  Esqueceu a senha?
-                </Link>
-              </div>
 
-              <Button type="submit" className="w-full" disabled={isLoggingIn}>
-                {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Entrar
-              </Button>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="rememberMe" {...register('rememberMe')} />
+                    <Label htmlFor="rememberMe" className="text-sm font-normal">
+                      Manter conectado
+                    </Label>
+                  </div>
+                  <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                    Esqueceu a senha?
+                  </Link>
+                </div>
+
+                <Button type="submit" className="h-11 w-full" disabled={isLoggingIn}>
+                  {isLoggingIn && <Loader2 className="mr-2 size-4 animate-spin" />}
+                  Entrar
+                </Button>
+              </form>
 
               <p className="text-center text-sm text-muted-foreground">
                 Não tem uma conta?{' '}
-                <Link to="/register" className="text-primary hover:underline">
+                <Link to="/register" className="font-medium text-primary hover:underline">
                   Criar conta
                 </Link>
               </p>
-            </form>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

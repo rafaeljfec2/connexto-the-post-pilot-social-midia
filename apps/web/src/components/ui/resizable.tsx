@@ -74,7 +74,7 @@ export function Resizable({
           "absolute z-10 bg-border transition-colors hover:bg-primary/30",
           direction === "horizontal"
             ? "right-0 top-0 h-full w-2 cursor-col-resize"
-            : "bottom-0 left-0 w-full h-2 cursor-row-resize"
+            : "bottom-0 left-0 h-2 w-full cursor-row-resize"
         )}
         onMouseDown={onMouseDown}
         role="separator"

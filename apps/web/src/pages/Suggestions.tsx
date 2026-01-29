@@ -1,333 +1,218 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { useState } from 'react'
-import {
-  suggestionsService,
-  Article,
-  TimeRecommendation,
-  Trend,
-} from '@/services/suggestions.service'
 import { useNavigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import DOMPurify from 'dompurify'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { SuggestionCard } from '@/components/suggestions/SuggestionCard'
 import { useSuggestions, SuggestionsFilters } from '@/hooks/useSuggestions'
+import { useGeneratePost } from '@/hooks/usePosts'
+import { useToast } from '@/components/ui/use-toast'
+import type { Article } from '@/services/suggestions.service'
+import { Sparkles, Search, Loader2, RefreshCw, Filter, FileText } from 'lucide-react'
+
+const quickFilters = [
+  { label: 'Todos', value: '' },
+  { label: 'Tech', value: 'tech,technology,software' },
+  { label: 'Marketing', value: 'marketing,growth,sales' },
+  { label: 'IA', value: 'ai,artificial intelligence,machine learning' },
+  { label: 'Negócios', value: 'business,startup,entrepreneurship' },
+]
 
 export function Suggestions() {
   const navigate = useNavigate()
+  const { toast } = useToast()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeFilter, setActiveFilter] = useState('')
+  const [generatingId, setGeneratingId] = useState<string | null>(null)
 
-  // Estado do formulário e dos filtros aplicados
-  const [formFilters, setFormFilters] = useState<SuggestionsFilters>({
-    q: '',
-    from: '',
-    to: '',
-    tags: [],
-    limit: 10,
-  })
-  const [filters, setFilters] = useState<SuggestionsFilters>(formFilters)
+  const generatePost = useGeneratePost()
 
-  // Handler para atualizar campos do formulário
-  function handleFormChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target
-    setFormFilters(f => ({
-      ...f,
-      [name]:
-        name === 'tags'
-          ? value
-              .split(',')
-              .map(t => t.trim())
-              .filter(Boolean)
-          : name === 'limit'
-            ? value
-              ? Number(value)
-              : undefined
-            : value,
-    }))
+  const filters: SuggestionsFilters = {
+    q: searchQuery || activeFilter,
+    tags: activeFilter ? activeFilter.split(',').map(t => t.trim()) : [],
+    limit: 12,
   }
 
-  // Handler para aplicar filtros ao submeter
-  function handleSubmit(e: React.FormEvent) {
+  const { data: articles = [], isLoading, error, refetch } = useSuggestions(filters)
+
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setFilters(formFilters)
+    refetch()
   }
 
-  const {
-    data: articles = [],
-    isLoading: isLoadingArticles,
-    error: errorArticles,
-    refetch: refetchArticles,
-  } = useSuggestions(filters)
-
-  const {
-    data: timeRecommendations = [],
-    isLoading: isLoadingTimes,
-    error: errorTimes,
-    refetch: refetchTimes,
-  } = useQuery<TimeRecommendation[]>({
-    queryKey: ['suggestions', 'times'],
-    queryFn: () => suggestionsService.getTimeRecommendations(),
-  })
-
-  const {
-    data: trends = [],
-    isLoading: isLoadingTrends,
-    error: errorTrends,
-    refetch: refetchTrends,
-  } = useQuery<Trend[]>({
-    queryKey: ['suggestions', 'trends'],
-    queryFn: () => suggestionsService.getTrends(),
-  })
-
-  const isLoading = isLoadingArticles || isLoadingTimes || isLoadingTrends
-  const error = errorArticles || errorTimes || errorTrends
+  const handleQuickFilter = (filter: string) => {
+    setActiveFilter(filter)
+    setSearchQuery('')
+  }
 
   const handleCreatePost = async (article: Article) => {
     try {
-      const response = await suggestionsService.generatePost({
-        topic: article.title,
-        includeHashtags: true,
+      setGeneratingId(article.url)
+      const response = await generatePost.mutateAsync({ topic: article.title })
+
+      toast({
+        title: 'Post gerado com sucesso!',
+        description: 'Redirecionando para a lista de posts...',
       })
-      navigate('/app/pending', { state: { generatedContent: response } })
-    } catch (error) {
-      console.error('Erro ao gerar post:', error)
+
+      navigate('/app/pending', {
+        state: { generatedContent: response, highlight: response.logId },
+      })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
+
+      if (errorMessage.includes('API') || errorMessage.includes('key')) {
+        toast({
+          title: 'Configure sua API Key',
+          description: 'Vá em Configurações e adicione sua chave da OpenAI.',
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Erro ao gerar post',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+      }
+    } finally {
+      setGeneratingId(null)
     }
   }
 
-  const handleSchedule = (article: Article) => {
-    console.log('Agendar post com tema:', article.title)
-  }
-
-  const handleDiscard = (article: Article) => {
-    refetchArticles()
-  }
-
-  // Função utilitária para sanitizar o summary
-  function getSafeSummary(summary?: string) {
-    if (!summary) return ''
-    return DOMPurify.sanitize(summary, {
-      ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'ul', 'ol', 'li', 'br', 'span', 'img', 'a'],
-      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel', 'style'],
-      FORBID_TAGS: ['iframe', 'script', 'object', 'embed'],
+  const handleSchedule = (_article: Article) => {
+    toast({
+      title: 'Em breve',
+      description: 'Agendamento será implementado em breve.',
     })
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <p className="text-destructive">
-          Não foi possível carregar as sugestões. Tente novamente mais tarde.
-        </p>
-      </div>
-    )
+  const handleDiscard = (_article: Article) => {
+    toast({
+      title: 'Sugestão descartada',
+      description: 'Atualize para ver novas sugestões.',
+    })
   }
 
   return (
-    <div className="w-full space-y-6 px-2 py-4 sm:px-4 md:mx-auto md:max-w-2xl md:px-8">
-      {/* Formulário de filtros */}
-      <form className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-6" onSubmit={handleSubmit}>
-        <div className="flex flex-col">
-          <label htmlFor="q" className="mb-1 text-xs text-muted-foreground">
-            Palavra-chave
-          </label>
-          <input
-            type="text"
-            name="q"
-            id="q"
-            placeholder="Palavra-chave"
-            value={formFilters.q}
-            onChange={handleFormChange}
-            className="rounded border border-border bg-background px-2 py-1 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-            autoComplete="off"
-          />
-        </div>
-        <div className="flex flex-col">
-          <label htmlFor="from" className="mb-1 text-xs text-muted-foreground">
-            De
-          </label>
-          <input
-            type="date"
-            name="from"
-            id="from"
-            placeholder="De (YYYY-MM-DD)"
-            value={formFilters.from}
-            onChange={handleFormChange}
-            className="rounded border border-border bg-background px-2 py-1 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-          />
-        </div>
-        <div className="flex flex-col">
-          <label htmlFor="to" className="mb-1 text-xs text-muted-foreground">
-            Até
-          </label>
-          <input
-            type="date"
-            name="to"
-            id="to"
-            placeholder="Até (YYYY-MM-DD)"
-            value={formFilters.to}
-            onChange={handleFormChange}
-            className="rounded border border-border bg-background px-2 py-1 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-          />
-        </div>
-        <div className="flex flex-col">
-          <label htmlFor="tags" className="mb-1 text-xs text-muted-foreground">
-            Tags
-          </label>
-          <input
-            type="text"
-            name="tags"
-            id="tags"
-            placeholder="Tags (separadas por vírgula)"
-            value={formFilters.tags?.join(',') ?? ''}
-            onChange={handleFormChange}
-            className="rounded border border-border bg-background px-2 py-1 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-            autoComplete="off"
-          />
-        </div>
-        <div className="flex flex-col">
-          <label htmlFor="limit" className="mb-1 text-xs text-muted-foreground">
-            Limite
-          </label>
-          <input
-            type="number"
-            name="limit"
-            id="limit"
-            min={1}
-            max={100}
-            placeholder="Limite"
-            value={formFilters.limit ?? ''}
-            onChange={handleFormChange}
-            className="rounded border border-border bg-background px-2 py-1 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-          />
-        </div>
-        <div className="flex items-end">
-          <button
-            type="submit"
-            className="rounded bg-primary px-4 py-1 text-sm font-semibold text-white shadow transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-zinc-900"
-          >
-            Filtrar
-          </button>
-        </div>
-      </form>
-      <Card className="bg-card">
-        <CardHeader>
-          <CardTitle>Sugestões de IA / Tendências</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h3 className="mb-2 text-lg font-medium">Sugestões de Temas</h3>
-              <div className="space-y-2">
-                {articles.map((article: Article) => (
-                  <Card
-                    key={article.url}
-                    className="border border-border bg-muted/60 p-2 transition-shadow hover:shadow-lg"
-                  >
-                    <CardContent className="p-2">
-                      <div className="flex flex-col gap-1">
-                        <h4 className="text-base font-semibold text-primary md:text-lg">
-                          {article.title}
-                        </h4>
-                        <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{article.source}</span>
-                          <span>•</span>
-                          <span>
-                            {article.publishedAt
-                              ? new Date(article.publishedAt).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  year: 'numeric',
-                                })
-                              : ''}
-                          </span>
-                        </div>
-                        {article.summary && (
-                          <div
-                            className="relative max-h-24 overflow-hidden pr-2 text-sm text-muted-foreground"
-                            style={{
-                              WebkitMaskImage:
-                                'linear-gradient(180deg, #000 60%, transparent 100%)',
-                            }}
-                            dangerouslySetInnerHTML={{ __html: getSafeSummary(article.summary) }}
-                          />
-                        )}
-                        {article.tags && article.tags.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {article.tags.map((tag: string) => (
-                              <span
-                                key={tag}
-                                className="rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="mt-3 flex flex-row-reverse gap-2">
-                          <Button size="sm" onClick={() => handleCreatePost(article)}>
-                            Criar post
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSchedule(article)}
-                          >
-                            Agendar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDiscard(article)}
-                          >
-                            Descartar
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Criar Conteúdo</h1>
+        <p className="text-muted-foreground">
+          Use IA para encontrar inspiração e gerar posts para suas redes sociais.
+        </p>
+      </div>
+
+      <Card className="overflow-hidden">
+        <CardContent className="p-4 md:p-6">
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Digite um tema, palavra-chave ou cole um link..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="h-12 pl-10 text-base"
+              />
             </div>
-            <div>
-              <h3 className="mb-2 text-lg font-medium">Horários Recomendados</h3>
-              <div className="space-y-2">
-                {timeRecommendations.map((rec: TimeRecommendation) => (
-                  <Card key={rec.time} className="p-2">
-                    <CardContent className="p-2">
-                      <p className="font-medium">{rec.time}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Engajamento: {rec.engagement}%
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Filter className="size-3.5" />
+                Filtros:
+              </span>
+              {quickFilters.map(filter => (
+                <Badge
+                  key={filter.label}
+                  variant={activeFilter === filter.value ? 'default' : 'outline'}
+                  className="cursor-pointer transition-colors hover:bg-primary/10"
+                  onClick={() => handleQuickFilter(filter.value)}
+                >
+                  {filter.label}
+                </Badge>
+              ))}
             </div>
-            <div>
-              <h3 className="mb-2 text-lg font-medium">Tendências de Engajamento</h3>
-              <div className="space-y-2">
-                {trends.map((trend: Trend) => (
-                  <Card key={trend.topic} className="p-2">
-                    <CardContent className="p-2">
-                      <p className="font-medium">{trend.topic}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Engajamento: {trend.engagement}%
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            <div className="flex gap-2">
+              <Button type="submit" className="gap-2" disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                Buscar Sugestões
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => refetch()}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
+
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Buscando sugestões...</p>
+          </div>
+        </div>
+      )}
+
+      {error && !isLoading && (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="flex flex-col items-center gap-3 py-8">
+            <p className="font-medium text-destructive">Erro ao carregar sugestões</p>
+            <p className="text-sm text-muted-foreground">
+              Verifique sua conexão e tente novamente.
+            </p>
+            <Button variant="outline" onClick={() => refetch()}>
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && !error && articles.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-12">
+            <div className="rounded-full bg-muted p-3">
+              <FileText className="size-6 text-muted-foreground" />
+            </div>
+            <div className="text-center">
+              <p className="font-medium">Nenhuma sugestão encontrada</p>
+              <p className="text-sm text-muted-foreground">
+                Tente buscar por outro tema ou ajuste os filtros.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && !error && articles.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">{articles.length} sugestões encontradas</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {articles.map((article: Article) => (
+              <SuggestionCard
+                key={article.url}
+                article={article}
+                onCreatePost={handleCreatePost}
+                onSchedule={handleSchedule}
+                onDiscard={handleDiscard}
+                isGenerating={generatingId === article.url}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

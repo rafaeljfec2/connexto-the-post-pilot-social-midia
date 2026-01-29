@@ -52,4 +52,5 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *Ar
 	protected.Get("/posts", postHandler.ListPosts)
 	protected.Get("/auth/linkedin/publish-url", authHandler.LinkedInPublishURL)
 	protected.Get("/auth/linkedin/publish-callback", authHandler.LinkedInPublishCallback)
+	protected.Post("/linkedin/publish", postHandler.PublishLinkedInPost)
 }

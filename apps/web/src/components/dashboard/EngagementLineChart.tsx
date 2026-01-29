@@ -7,7 +7,6 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const data = [
   { name: 'Seg', engajamento: 120 },
@@ -21,27 +20,39 @@ const data = [
 
 export function EngagementLineChart() {
   return (
-    <Card className="h-64">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base md:text-lg">Engajamento por dia</CardTitle>
-      </CardHeader>
-      <CardContent className="h-48 p-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis fontSize={12} tickLine={false} axisLine={false} />
-            <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="engajamento"
-              stroke="#6366f1"
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 8 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+        <XAxis
+          dataKey="name"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+          stroke="hsl(var(--muted-foreground))"
+        />
+        <YAxis
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+          stroke="hsl(var(--muted-foreground))"
+        />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: 'hsl(var(--card))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: '8px',
+            color: 'hsl(var(--foreground))',
+          }}
+        />
+        <Line
+          type="monotone"
+          dataKey="engajamento"
+          stroke="hsl(var(--primary))"
+          strokeWidth={2}
+          dot={{ r: 4, fill: 'hsl(var(--primary))' }}
+          activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
   )
 }

@@ -1,14 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  CreditCard,
-  CreditCard as CreditCardIcon,
-  ShieldCheck,
-  Apple,
-  CheckCircle,
-} from 'lucide-react'
+import { CreditCard as CreditCardIcon, ShieldCheck, Smartphone, CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
 import {
   Select,
@@ -34,114 +28,123 @@ export function Subscription() {
   ])
 
   return (
-    <div className="mx-auto max-w-lg space-y-8 py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Adicionar forma de pagamento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6 flex gap-2">
-            <Button
-              type="button"
-              variant={method === 'card' ? 'outline' : 'ghost'}
-              className={`flex flex-1 items-center gap-2 ${method === 'card' ? 'border-blue-600 text-blue-600' : ''}`}
-              onClick={() => setMethod('card')}
-            >
-              <CreditCardIcon className="h-5 w-5" /> Cartão
-            </Button>
-            <Button
-              type="button"
-              variant={method === 'google' ? 'outline' : 'ghost'}
-              className={`flex flex-1 items-center gap-2 ${method === 'google' ? 'border-blue-600 text-blue-600' : ''}`}
-              onClick={() => setMethod('google')}
-            >
-              <Apple className="h-5 w-5" /> Google Pay
-            </Button>
-          </div>
-          {method === 'card' && (
-            <form className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">Número do cartão</label>
-                <Input
-                  placeholder="1234 1234 1234 1234"
-                  maxLength={19}
-                  inputMode="numeric"
-                  className="pr-16"
-                />
-                <div className="absolute right-4 top-10 flex gap-1">
-                  <img src="https://img.icons8.com/color/24/000000/visa.png" alt="Visa" />
-                  <img
-                    src="https://img.icons8.com/color/24/000000/mastercard-logo.png"
-                    alt="Mastercard"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="mb-1 block text-sm font-medium">Data de validade</label>
-                  <Input placeholder="MM / AA" maxLength={5} />
-                </div>
-                <div className="flex-1">
-                  <label className="mb-1 block text-sm font-medium">Código de segurança</label>
-                  <Input placeholder="CVC" maxLength={4} />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">País</label>
-                <Select
-                  value={form.country}
-                  onValueChange={country => setForm(f => ({ ...f, country }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o país" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map(c => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Ao fornecer seus dados de cartão, você permite que a plataforma faça a cobrança para
-                pagamentos futuros em conformidade com os respectivos termos.
-              </p>
-              <Button className="mt-4 w-full" type="submit">
-                Adicionar
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Assinatura</h1>
+        <p className="text-muted-foreground">Gerencie seus métodos de pagamento e faturas.</p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Forma de Pagamento</CardTitle>
+            <CardDescription>Adicione ou altere seu método de pagamento.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-6 flex gap-2">
+              <Button
+                type="button"
+                variant={method === 'card' ? 'default' : 'outline'}
+                className="flex flex-1 items-center gap-2"
+                onClick={() => setMethod('card')}
+              >
+                <CreditCardIcon className="size-4" />
+                Cartão
               </Button>
-              <Button className="mt-2 w-full" variant="outline" type="button">
-                Voltar
+              <Button
+                type="button"
+                variant={method === 'google' ? 'default' : 'outline'}
+                className="flex flex-1 items-center gap-2"
+                onClick={() => setMethod('google')}
+              >
+                <Smartphone className="size-4" />
+                Google Pay
               </Button>
-            </form>
-          )}
-          {method === 'google' && (
-            <div className="flex flex-col items-center justify-center py-8">
-              <Apple className="mb-2 h-10 w-10 text-zinc-700" />
-              <p className="mb-4 text-muted-foreground">Pagamento via Google Pay em breve.</p>
-              <Button disabled>Indisponível</Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Faturas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2">
-            {invoices.map((item, idx) => (
-              <li key={idx} className="flex items-center gap-4 text-sm">
-                <ShieldCheck className="h-4 w-4 text-green-600" />
-                <span>{item.date}</span>
-                <span>{item.amount}</span>
-                <Badge className="bg-green-600 text-white">{item.status}</Badge>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+
+            {method === 'card' && (
+              <form className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Número do cartão</label>
+                  <Input placeholder="1234 1234 1234 1234" maxLength={19} inputMode="numeric" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Validade</label>
+                    <Input placeholder="MM / AA" maxLength={5} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">CVC</label>
+                    <Input placeholder="123" maxLength={4} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">País</label>
+                  <Select
+                    value={form.country}
+                    onValueChange={country => setForm(f => ({ ...f, country }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione o país" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map(c => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ao fornecer seus dados, você autoriza cobranças futuras conforme os termos de uso.
+                </p>
+                <Button className="w-full" type="submit">
+                  Adicionar cartão
+                </Button>
+              </form>
+            )}
+
+            {method === 'google' && (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="mb-4 rounded-full bg-muted p-4">
+                  <Smartphone className="size-8 text-muted-foreground" />
+                </div>
+                <p className="mb-4 text-center text-muted-foreground">
+                  Pagamento via Google Pay estará disponível em breve.
+                </p>
+                <Button disabled>Indisponível</Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Histórico de Faturas</CardTitle>
+            <CardDescription>Suas últimas transações e pagamentos.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {invoices.map((item, idx) => (
+                <li key={idx} className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="size-4 text-success" />
+                    <div>
+                      <p className="text-sm font-medium">{item.amount}</p>
+                      <p className="text-xs text-muted-foreground">{item.date}</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="gap-1 border-success text-success">
+                    <CheckCircle2 className="size-3" />
+                    {item.status}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

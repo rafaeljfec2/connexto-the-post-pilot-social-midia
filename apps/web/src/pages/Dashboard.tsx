@@ -1,35 +1,200 @@
-import { Send, BarChart3, Users, Clock } from 'lucide-react'
-import { KpiCard } from '@/components/dashboard/KpiCard'
-import { EngagementLineChart } from '@/components/dashboard/EngagementLineChart'
-import { PostsByNetworkBarChart } from '@/components/dashboard/PostsByNetworkBarChart'
-import { RecentPostsTable } from '@/components/dashboard/RecentPostsTable'
+import { useNavigate } from 'react-router-dom'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { EngagementLineChart } from '@/components/dashboard/EngagementLineChart'
+import { usePosts } from '@/hooks/usePosts'
+import { Send, Clock, Sparkles, FileText, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react'
+
+interface KpiData {
+  readonly title: string
+  readonly value: string
+  readonly change?: string
+  readonly changeType?: 'positive' | 'negative' | 'neutral'
+  readonly icon: React.ReactNode
+}
+
+function StatCard({ title, value, change, changeType, icon }: KpiData) {
+  return (
+    <Card>
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold tracking-tight">{value}</p>
+            {change && (
+              <p
+                className={`text-xs ${
+                  changeType === 'positive'
+                    ? 'text-success'
+                    : changeType === 'negative'
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                }`}
+              >
+                {change}
+              </p>
+            )}
+          </div>
+          <div className="rounded-lg bg-primary/10 p-2.5">{icon}</div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export function Dashboard() {
-  return (
-    <div className="w-full space-y-6 px-2 py-4 sm:px-4 md:mx-auto md:max-w-5xl md:px-8">
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard title="Total de Posts" value="120" icon={<Send className="h-5 w-5" />} />
-        <KpiCard title="Engajamento Total" value="8.500" icon={<BarChart3 className="h-5 w-5" />} />
-        <KpiCard title="Seguidores" value="2.300" icon={<Users className="h-5 w-5" />} />
-        <KpiCard title="Posts Pendentes" value="5" icon={<Clock className="h-5 w-5" />} />
-      </div>
+  const navigate = useNavigate()
+  const { data: posts, isLoading } = usePosts()
 
-      {/* Gráficos */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <EngagementLineChart />
-        <PostsByNetworkBarChart />
-      </div>
+  const safePosts = Array.isArray(posts) ? posts : []
 
-      {/* Lista de posts recentes */}
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Posts Recentes</h2>
-          <Button variant="outline">Ver todos</Button>
+  const pendingCount = safePosts.filter(
+    p => p.status === 'success' || p.status === 'Pendente' || p.status === 'started'
+  ).length
+
+  const publishedCount = safePosts.filter(p => p.status === 'published').length
+
+  const totalPosts = safePosts.length
+
+  const kpis: KpiData[] = [
+    {
+      title: 'Total de Posts',
+      value: totalPosts.toString(),
+      change: totalPosts > 0 ? 'Posts gerados pela IA' : 'Nenhum post ainda',
+      changeType: 'neutral',
+      icon: <FileText className="size-5 text-primary" />,
+    },
+    {
+      title: 'Posts Publicados',
+      value: publishedCount.toString(),
+      change: publishedCount > 0 ? 'No LinkedIn' : 'Nenhum publicado',
+      changeType: publishedCount > 0 ? 'positive' : 'neutral',
+      icon: <Send className="size-5 text-primary" />,
+    },
+    {
+      title: 'Posts Pendentes',
+      value: pendingCount.toString(),
+      change: pendingCount > 0 ? 'Aguardando publicação' : 'Nenhum pendente',
+      changeType: pendingCount > 0 ? 'neutral' : 'positive',
+      icon: <Clock className="size-5 text-primary" />,
+    },
+  ]
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="size-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando dashboard...</p>
         </div>
-        <RecentPostsTable />
       </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">Acompanhe o desempenho dos seus posts e métricas.</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {kpis.map(kpi => (
+          <StatCard key={kpi.title} {...kpi} />
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Engajamento ao Longo do Tempo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <EngagementLineChart />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Ações Rápidas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              variant="outline"
+              className="h-auto w-full justify-between py-3"
+              onClick={() => navigate('/app/suggestions')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="rounded-md bg-primary/10 p-2">
+                  <Sparkles className="size-4 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Criar com IA</p>
+                  <p className="text-xs text-muted-foreground">Gere posts automaticamente</p>
+                </div>
+              </div>
+              <ArrowRight className="size-4 text-muted-foreground" />
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-auto w-full justify-between py-3"
+              onClick={() => navigate('/app/pending')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="rounded-md bg-warning/10 p-2">
+                  <FileText className="size-4 text-warning" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Ver Pendentes</p>
+                  <p className="text-xs text-muted-foreground">{pendingCount} posts aguardando</p>
+                </div>
+              </div>
+              <ArrowRight className="size-4 text-muted-foreground" />
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-auto w-full justify-between py-3"
+              onClick={() => navigate('/app/profile')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="rounded-md bg-success/10 p-2">
+                  <CheckCircle2 className="size-4 text-success" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Conectar LinkedIn</p>
+                  <p className="text-xs text-muted-foreground">Configure para publicar</p>
+                </div>
+              </div>
+              <ArrowRight className="size-4 text-muted-foreground" />
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {totalPosts === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center gap-4 py-12">
+            <div className="rounded-full bg-primary/10 p-4">
+              <Sparkles className="size-8 text-primary" />
+            </div>
+            <div className="space-y-1 text-center">
+              <p className="text-lg font-medium">Comece a criar!</p>
+              <p className="max-w-md text-muted-foreground">
+                Use a inteligência artificial para gerar posts incríveis para suas redes sociais.
+                Clique no botão abaixo para começar.
+              </p>
+            </div>
+            <Button onClick={() => navigate('/app/suggestions')} className="gap-2">
+              <Sparkles className="size-4" />
+              Criar meu primeiro post
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

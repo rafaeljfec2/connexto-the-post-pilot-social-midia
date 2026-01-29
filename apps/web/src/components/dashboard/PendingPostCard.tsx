@@ -50,7 +50,7 @@ export function PendingPostCard({
             <CardTitle className="line-clamp-2 text-base sm:text-lg md:text-xl">{input}</CardTitle>
             <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:gap-4">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="size-4" />
                 {createdAt}
               </div>
               <div className="flex items-center gap-2">
@@ -67,35 +67,31 @@ export function PendingPostCard({
         </div>
         {usage && (
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            {usage.prompt_tokens !== undefined && (
-              <span>Prompt tokens: {usage.prompt_tokens}</span>
-            )}
+            {usage.prompt_tokens !== undefined && <span>Prompt tokens: {usage.prompt_tokens}</span>}
             {usage.completion_tokens !== undefined && (
               <span>Completion tokens: {usage.completion_tokens}</span>
             )}
-            {usage.total_tokens !== undefined && (
-              <span>Total tokens: {usage.total_tokens}</span>
-            )}
+            {usage.total_tokens !== undefined && <span>Total tokens: {usage.total_tokens}</span>}
           </div>
         )}
       </CardContent>
       <CardFooter className="flex flex-col gap-2 border-t bg-muted/50 p-4 sm:flex-row sm:gap-2">
         <Button variant="outline" className="w-full sm:w-auto" onClick={onEdit}>
-          <Edit className="mr-2 h-4 w-4" /> Editar
+          <Edit className="mr-2 size-4" /> Editar
         </Button>
         <Button variant="outline" className="w-full sm:w-auto" onClick={onSchedule}>
           Agendar
         </Button>
         {status === 'Pendente' && (
           <Button
-            className="w-full bg-green-600 text-white hover:bg-green-700 sm:w-auto"
+            className="w-full bg-success text-success-foreground hover:bg-success/90 sm:w-auto"
             onClick={onPublish}
           >
-            <Send className="mr-2 h-4 w-4" /> Publicar
+            <Send className="mr-2 size-4" /> Publicar
           </Button>
         )}
         <Button variant="destructive" className="w-full sm:w-auto" onClick={onDelete}>
-          <Trash2 className="mr-2 h-4 w-4" /> Excluir
+          <Trash2 className="mr-2 size-4" /> Excluir
         </Button>
       </CardFooter>
     </Card>

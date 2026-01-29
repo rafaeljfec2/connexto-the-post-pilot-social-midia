@@ -3,44 +3,70 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Clock, FileText, Home, Settings, User, CreditCard, Menu, Lightbulb } from 'lucide-react'
+import { Sparkles, FileText, LayoutDashboard, Settings, User, Menu, Send } from 'lucide-react'
 import { useState } from 'react'
 
-const routes = [
+interface NavItem {
+  readonly label: string
+  readonly icon: React.ElementType
+  readonly href: string
+}
+
+interface NavGroup {
+  readonly title: string
+  readonly items: readonly NavItem[]
+}
+
+const navigation: readonly NavGroup[] = [
   {
-    label: 'Dashboard',
-    icon: Home,
-    href: '/app',
+    title: 'Criar',
+    items: [
+      {
+        label: 'Sugestões IA',
+        icon: Sparkles,
+        href: '/app/suggestions',
+      },
+    ],
   },
   {
-    label: 'Posts Pendentes',
-    icon: FileText,
-    href: '/app/pending',
+    title: 'Gerenciar',
+    items: [
+      {
+        label: 'Posts',
+        icon: FileText,
+        href: '/app/pending',
+      },
+      {
+        label: 'Publicados',
+        icon: Send,
+        href: '/app/history',
+      },
+    ],
   },
   {
-    label: 'Sugestões',
-    icon: Lightbulb,
-    href: '/app/suggestions',
+    title: 'Análise',
+    items: [
+      {
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        href: '/app',
+      },
+    ],
   },
   {
-    label: 'Histórico',
-    icon: Clock,
-    href: '/app/history',
-  },
-  {
-    label: 'Assinatura',
-    icon: CreditCard,
-    href: '/app/subscription',
-  },
-  {
-    label: 'Perfil',
-    icon: User,
-    href: '/app/profile',
-  },
-  {
-    label: 'Configurações',
-    icon: Settings,
-    href: '/app/settings',
+    title: 'Conta',
+    items: [
+      {
+        label: 'Perfil',
+        icon: User,
+        href: '/app/profile',
+      },
+      {
+        label: 'Configurações',
+        icon: Settings,
+        href: '/app/settings',
+      },
+    ],
   },
 ]
 
@@ -54,35 +80,65 @@ export function Sidebar() {
     setIsOpen(false)
   }
 
-  const SidebarContent = () => (
-    <>
+  const isActive = (href: string) => {
+    if (href === '/app') {
+      return location.pathname === '/app'
+    }
+    return location.pathname.startsWith(href)
+  }
+
+  const NavContent = () => (
+    <div className="flex h-full flex-col">
       <div className="flex h-16 items-center border-b px-6">
-        <h2 className="text-lg font-semibold">The Post Pilot</h2>
-      </div>
-      <ScrollArea className="h-[calc(100vh-4rem)]">
-        <div className="space-y-1 p-4">
-          {routes.map(route => (
-            <Button
-              key={route.href}
-              variant={location.pathname === route.href ? 'secondary' : 'ghost'}
-              className={cn(
-                'w-full justify-start gap-2',
-                location.pathname === route.href && 'bg-secondary'
-              )}
-              onClick={() => handleNavigation(route.href)}
-            >
-              <route.icon className="h-5 w-5" />
-              {route.label}
-            </Button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
+            <Send className="size-4 text-primary-foreground" />
+          </div>
+          <span className="text-lg font-semibold">Post Pilot</span>
         </div>
+      </div>
+
+      <ScrollArea className="flex-1 px-3 py-4">
+        <nav className="space-y-6">
+          {navigation.map(group => (
+            <div key={group.title}>
+              <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {group.title}
+              </h3>
+              <div className="space-y-1">
+                {group.items.map(item => {
+                  const active = isActive(item.href)
+                  return (
+                    <Button
+                      key={item.href}
+                      variant="ghost"
+                      className={cn(
+                        'w-full justify-start gap-3 font-normal',
+                        active && 'bg-primary/10 font-medium text-primary hover:bg-primary/15'
+                      )}
+                      onClick={() => handleNavigation(item.href)}
+                    >
+                      <item.icon
+                        className={cn('size-4', active ? 'text-primary' : 'text-muted-foreground')}
+                      />
+                      {item.label}
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
       </ScrollArea>
-    </>
+
+      <div className="border-t p-4">
+        <p className="text-center text-xs text-muted-foreground">Post Pilot v1.0</p>
+      </div>
+    </div>
   )
 
   return (
     <>
-      {/* Menu hambúrguer (Sheet) mobile first */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button
@@ -91,16 +147,16 @@ export function Sidebar() {
             className="fixed left-4 top-4 z-50 md:hidden"
             aria-label="Abrir menu"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="size-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-64 bg-background p-0 md:hidden">
-          <SidebarContent />
+        <SheetContent side="left" className="w-64 p-0">
+          <NavContent />
         </SheetContent>
       </Sheet>
-      {/* Sidebar fixa só em desktop */}
-      <aside className="hidden w-64 border-r bg-background md:block">
-        <SidebarContent />
+
+      <aside className="hidden w-64 shrink-0 border-r bg-card md:block">
+        <NavContent />
       </aside>
     </>
   )

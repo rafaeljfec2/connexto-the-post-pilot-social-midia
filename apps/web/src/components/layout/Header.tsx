@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/hooks/useTheme'
-import { Moon, Sun, Monitor, Bell } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Moon, Sun, Bell, LogOut, ChevronRight } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useToast } from '@/components/ui/use-toast'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
@@ -10,74 +10,99 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 
-const themeOrder = ['light', 'dark', 'system'] as const
-const themeIcons = {
-  light: <Sun className="h-5 w-5" />,
-  dark: <Moon className="h-5 w-5" />,
-  system: <Monitor className="h-5 w-5" />,
+const routeTitles: Record<string, string> = {
+  '/app': 'Dashboard',
+  '/app/pending': 'Posts',
+  '/app/suggestions': 'Sugestões IA',
+  '/app/history': 'Publicados',
+  '/app/profile': 'Perfil',
+  '/app/settings': 'Configurações',
+  '/app/subscription': 'Assinatura',
 }
 
-function nextTheme(current: string) {
-  const idx = themeOrder.indexOf(current as any)
-  return themeOrder[(idx + 1) % themeOrder.length]
-}
-
-export function Header({
-  onOpenSidebar,
-  SheetTrigger,
-}: Readonly<{ onOpenSidebar?: () => void; SheetTrigger?: React.ElementType }>) {
+export function Header() {
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
   const { toast } = useToast()
   const { user, logout } = useAuth()
 
+  const currentTitle = routeTitles[location.pathname] ?? 'Post Pilot'
+
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated')
+    logout()
     toast({
-      title: 'Logout realizado com sucesso!',
-      description: 'Redirecionando para a página inicial...',
+      title: 'Sessão encerrada',
+      description: 'Até logo!',
     })
     navigate('/login')
-    logout()
+  }
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   return (
-    <header className="fixed left-0 top-0 z-40 flex h-16 w-full items-center border-b bg-background px-8 py-2 text-secondary-foreground shadow dark:bg-zinc-900">
-      <div className="flex w-full items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            className="rounded p-2 hover:bg-muted focus:outline-none md:hidden"
-            aria-label="Abrir menu"
-            onClick={onOpenSidebar}
-          ></button>
-
-          <h1 className="text-lg font-semibold md:text-xl">The Post Pilot</h1>
+    <header className="sticky top-0 z-40 flex h-14 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex w-full items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-2 pl-12 md:pl-0">
+          <nav className="flex items-center gap-1 text-sm text-muted-foreground">
+            <span className="hidden sm:inline">Post Pilot</span>
+            <ChevronRight className="hidden size-4 sm:inline" />
+            <span className="font-medium text-foreground">{currentTitle}</span>
+          </nav>
         </div>
-        <div className="flex items-center gap-6">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
+
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="size-9" aria-label="Notificações">
+            <Bell className="size-4" />
           </Button>
+
           <Button
             variant="ghost"
             size="icon"
+            className="size-9"
             aria-label="Alternar tema"
-            onClick={() => setTheme(nextTheme(theme))}
+            onClick={toggleTheme}
           >
-            {themeIcons[theme]}
+            {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
-                <Avatar className="h-8 w-8">
+              <Button variant="ghost" className="relative ml-2 size-9 rounded-full p-0">
+                <Avatar className="size-8">
                   <AvatarImage src={user?.avatarUrl} alt={user?.name} />
-                  <AvatarFallback>{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-sm text-primary-foreground">
+                    {user?.name?.charAt(0).toUpperCase() ?? 'U'}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{user?.name ?? 'Usuário'}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email ?? ''}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/app/profile')}>Perfil</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/app/settings')}>
+                Configurações
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOut className="mr-2 size-4" />
+                Sair
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

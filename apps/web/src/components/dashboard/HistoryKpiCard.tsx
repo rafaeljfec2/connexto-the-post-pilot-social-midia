@@ -10,7 +10,7 @@ interface HistoryKpiCardProps {
 export function HistoryKpiCard({ title, value, icon }: Readonly<HistoryKpiCardProps>) {
   return (
     <Card className="flex flex-row items-center gap-3 border bg-muted p-3 shadow-none sm:p-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
         {icon}
       </div>
       <CardContent className="flex flex-col p-0">

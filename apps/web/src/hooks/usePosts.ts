@@ -1,17 +1,56 @@
-import { useQuery } from '@tanstack/react-query'
-import { postsService, Post } from '@/services/posts.service'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  postsService,
+  Post,
+  GeneratePostRequest,
+  GeneratePostResponse,
+  PublishLinkedInRequest,
+  PublishLinkedInResponse,
+} from '@/services/posts.service'
+
+export const POSTS_QUERY_KEY = ['posts'] as const
 
 export function usePosts() {
   return useQuery<Post[]>({
-    queryKey: ['posts', 'pending'],
+    queryKey: POSTS_QUERY_KEY,
     queryFn: async () => {
       const result = await postsService.list()
-      // Garantir que sempre retornamos um array
       return Array.isArray(result) ? result : []
     },
-    // Retry em caso de erro
-    retry: 1,
-    // Valor padrão para evitar null/undefined
-    initialData: [],
+    retry: 2,
+    staleTime: 30000,
+  })
+}
+
+export function useGeneratePost() {
+  const queryClient = useQueryClient()
+
+  return useMutation<GeneratePostResponse, Error, GeneratePostRequest>({
+    mutationFn: request => postsService.generate(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: POSTS_QUERY_KEY })
+    },
+  })
+}
+
+export function usePublishToLinkedIn() {
+  const queryClient = useQueryClient()
+
+  return useMutation<PublishLinkedInResponse, Error, PublishLinkedInRequest>({
+    mutationFn: request => postsService.publishToLinkedIn(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: POSTS_QUERY_KEY })
+    },
+  })
+}
+
+export function useDeletePost() {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, string>({
+    mutationFn: id => postsService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: POSTS_QUERY_KEY })
+    },
   })
 }
