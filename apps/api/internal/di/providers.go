@@ -1,21 +1,22 @@
 package di
 
 import (
-	"os"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	appPkg "github.com/postpilot/api/internal/app"
 	"github.com/postpilot/api/internal/db"
+	"github.com/postpilot/api/internal/httpclient"
 	"github.com/postpilot/api/internal/repositories"
 	"github.com/postpilot/api/internal/services"
 )
 
 // DatabaseSet provides MongoDB database
 var DatabaseSet = wire.NewSet(ProvideDatabase)
+
+// HTTPClientSet provides HTTP client
+var HTTPClientSet = wire.NewSet(ProvideHTTPClient)
 
 // RepositorySet provides all repositories
 var RepositorySet = wire.NewSet(
@@ -42,6 +43,7 @@ var HandlerSet = wire.NewSet(
 // AppSet combines all providers needed to build the application
 var AppSet = wire.NewSet(
 	DatabaseSet,
+	HTTPClientSet,
 	RepositorySet,
 	ServiceSet,
 	HandlerSet,
@@ -52,28 +54,9 @@ func ProvideDatabase() (*mongo.Database, error) {
 	return db.GetDatabase()
 }
 
-// JWTConfig holds JWT configuration for injection
-type JWTConfig struct {
-	Secret     string
-	Expiration time.Duration
-}
-
-// ProvideJWTConfig creates JWT configuration from environment
-func ProvideJWTConfig() *JWTConfig {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "your-secret-key"
-	}
-	exp := 24 * time.Hour
-	if v := os.Getenv("JWT_EXPIRATION"); v != "" {
-		if d, err := time.ParseDuration(v); err == nil {
-			exp = d
-		}
-	}
-	return &JWTConfig{
-		Secret:     secret,
-		Expiration: exp,
-	}
+// ProvideHTTPClient creates a configured HTTP client
+func ProvideHTTPClient() *httpclient.HTTPClient {
+	return httpclient.New(httpclient.DefaultConfig())
 }
 
 // ProvideAuthService creates AuthService with dependencies

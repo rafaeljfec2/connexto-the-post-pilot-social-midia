@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -63,8 +62,8 @@ func (c *OpenAIClient) GenerateText(ctx context.Context, apiKey, model, prompt s
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		b, _ := ioutil.ReadAll(resp.Body)
-		return "", "", nil, errors.New(fmt.Sprintf("OpenAI error: %s", string(b)))
+		b, _ := io.ReadAll(resp.Body)
+		return "", "", nil, fmt.Errorf("OpenAI error: %s", string(b))
 	}
 
 	var openaiResp OpenAIChatResponse
@@ -72,7 +71,7 @@ func (c *OpenAIClient) GenerateText(ctx context.Context, apiKey, model, prompt s
 		return "", "", nil, err
 	}
 	if len(openaiResp.Choices) == 0 {
-		return "", openaiResp.Model, openaiResp.Usage, errors.New("No choices returned from OpenAI")
+		return "", openaiResp.Model, openaiResp.Usage, fmt.Errorf("no choices returned from OpenAI")
 	}
 	return openaiResp.Choices[0].Message.Content, openaiResp.Model, openaiResp.Usage, nil
 }

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,6 +12,8 @@ import (
 	"github.com/postpilot/api/internal/models"
 	"go.uber.org/zap"
 )
+
+var ErrInvalidInsertedID = errors.New("failed to convert InsertedID to ObjectID")
 
 type SocialPostStoriesRepository interface {
 	Create(ctx context.Context, log *models.SocialPostStories) (primitive.ObjectID, error)
@@ -43,7 +46,13 @@ func (r *socialPostStoriesRepository) Create(ctx context.Context, logEntry *mode
 		log.Logger.Error("Failed to create social post story", zap.Error(err))
 		return primitive.NilObjectID, err
 	}
-	id := res.InsertedID.(primitive.ObjectID)
+
+	id, ok := res.InsertedID.(primitive.ObjectID)
+	if !ok {
+		log.Logger.Error("Failed to convert InsertedID to ObjectID")
+		return primitive.NilObjectID, ErrInvalidInsertedID
+	}
+
 	log.Logger.Info("Social post story created", zap.String("id", id.Hex()))
 	return id, nil
 }

@@ -7,11 +7,16 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
-
+	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/models"
 	"github.com/postpilot/api/internal/repositories"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrJWTSecretNotConfigured = errors.New("JWT_SECRET environment variable is required but not set")
 )
 
 type AuthService interface {
@@ -30,26 +35,49 @@ type AuthService interface {
 }
 
 type authService struct {
-	repo          repositories.UserRepository
-	jwtSecret     string
-	jwtExpiration time.Duration
+	repo              repositories.UserRepository
+	jwtSecret         string
+	jwtExpiration     time.Duration
+	refreshExpiration time.Duration
 }
 
 func NewAuthService(repo repositories.UserRepository) AuthService {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "your-secret-key"
+		env := os.Getenv("ENV")
+		if env == "production" || env == "staging" {
+			log.Logger.Fatal("JWT_SECRET environment variable is required in production/staging",
+				zap.String("env", env),
+			)
+		}
+		log.Logger.Warn("JWT_SECRET not set, using insecure default for development only")
+		secret = "dev-only-insecure-secret-change-me"
 	}
+
 	exp := 24 * time.Hour
 	if v := os.Getenv("JWT_EXPIRATION"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
 			exp = d
 		}
 	}
+
+	refreshExp := 7 * 24 * time.Hour
+	if v := os.Getenv("JWT_REFRESH_EXPIRATION"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			refreshExp = d
+		}
+	}
+
+	log.Logger.Info("AuthService initialized",
+		zap.Duration("jwtExpiration", exp),
+		zap.Duration("refreshExpiration", refreshExp),
+	)
+
 	return &authService{
-		repo:          repo,
-		jwtSecret:     secret,
-		jwtExpiration: exp,
+		repo:              repo,
+		jwtSecret:         secret,
+		jwtExpiration:     exp,
+		refreshExpiration: refreshExp,
 	}
 }
 
@@ -151,7 +179,7 @@ func (s *authService) GenerateRefreshToken(user *models.User) (string, error) {
 	claims := jwt.MapClaims{
 		"sub":  user.ID.Hex(),
 		"type": "refresh",
-		"exp":  time.Now().Add(7 * 24 * time.Hour).Unix(), // 7 dias
+		"exp":  time.Now().Add(s.refreshExpiration).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.jwtSecret))

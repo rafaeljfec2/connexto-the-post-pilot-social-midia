@@ -6,16 +6,29 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
 	_ "github.com/postpilot/api/docs" // swagger docs (gerado pelo swag)
+	"github.com/postpilot/api/internal/db"
 	"github.com/postpilot/api/internal/middleware"
 )
 
 func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *ArticleHandler, postHandler *PostHandler) {
+	// Root health check (for load balancers, k8s probes, etc.)
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok", "service": "post-pilot-api"})
+	})
+
 	// Swagger docs
 	app.Get("/the-post-pilot/swagger/*", swagger.New())
 
-	// Health check
+	// Health check with DB status
 	app.Get("/the-post-pilot/v1/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "ok"})
+		dbStatus := "ok"
+		if err := db.HealthCheck(c.Context()); err != nil {
+			dbStatus = "error"
+		}
+		return c.JSON(fiber.Map{
+			"status":   "ok",
+			"database": dbStatus,
+		})
 	})
 
 	// Auth routes (públicas)

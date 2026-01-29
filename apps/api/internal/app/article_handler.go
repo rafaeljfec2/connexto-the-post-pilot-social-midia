@@ -11,7 +11,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/services"
 	"go.uber.org/zap"
@@ -42,18 +41,11 @@ func NewArticleHandler(articleService services.ArticleService, authService servi
 // @Security BearerAuth
 // @Router /articles/suggestions [get]
 func (h *ArticleHandler) GetSuggestions(c *fiber.Ctx) error {
-	claims := c.Locals("user").(jwt.MapClaims)
-	userId, ok := claims["sub"].(string)
-	if !ok {
-		log.Logger.Warn("Invalid user claims on article suggestions", zap.String("endpoint", "/articles/suggestions"))
-		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "Invalid user claims"})
+	user, err := GetUserFromContext(c, h.AuthService)
+	if err != nil {
+		return HandleUserContextError(c, err, "/articles/suggestions")
 	}
-
-	user, err := h.AuthService.GetUserByID(c.Context(), userId)
-	if err != nil || user == nil {
-		log.Logger.Warn("User not found on article suggestions", zap.String("userId", userId), zap.String("endpoint", "/articles/suggestions"))
-		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "User not found"})
-	}
+	userId := user.ID.Hex()
 
 	q := c.Query("q")
 	fromStr := c.Query("from")
@@ -130,7 +122,7 @@ type DuckArticlesResponse struct {
 func (h *ArticleHandler) DuckDuckGoSuggestionsHandler(c *fiber.Ctx) error {
 	q := c.Query("q")
 	if q == "" {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Missing required parameter: q"})
+		return BadRequestError(c, "Missing required parameter: q")
 	}
 	limit := 3
 	if l := c.Query("limit"); l != "" {

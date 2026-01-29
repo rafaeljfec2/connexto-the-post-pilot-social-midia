@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/services"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -34,37 +33,31 @@ func NewPostHandler(postService services.PostService, authService services.AuthS
 // @Security BearerAuth
 // @Router /posts/generate [post]
 func (h *PostHandler) Generate(c *fiber.Ctx) error {
-	claims := c.Locals("user").(jwt.MapClaims)
-	userId, ok := claims["sub"].(string)
-	if !ok {
-		log.Logger.Warn("Invalid user claims on post generate", zap.String("endpoint", "/posts/generate"))
-		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "Invalid user claims"})
+	user, err := GetUserFromContext(c, h.AuthService)
+	if err != nil {
+		return HandleUserContextError(c, err, "/posts/generate")
 	}
+	userId := user.ID.Hex()
 
-	var req generatePostRequest
+	var req GeneratePostRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Logger.Warn("Invalid generate post payload", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return BadRequestError(c, err.Error())
 	}
 
-	user, err := h.AuthService.GetUserByID(c.Context(), userId)
-	if err != nil || user == nil {
-		log.Logger.Warn("User not found on post generate", zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
-		return c.Status(http.StatusUnauthorized).JSON(map[string]interface{}{"error": "User not found"})
+	if err := ValidateStruct(&req); err != nil {
+		log.Logger.Warn("Generate post validation failed", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
+		return ValidationError(c, err.Error())
 	}
 
 	resp, err := h.PostService.GeneratePost(c.Context(), user, req.Topic)
 	if err != nil {
 		log.Logger.Error("Failed to generate post", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
-		return c.Status(http.StatusInternalServerError).JSON(map[string]interface{}{"error": err.Error()})
+		return InternalError(c, err.Error())
 	}
 
 	log.Logger.Info("Post generated", zap.String("userId", userId), zap.String("endpoint", "/posts/generate"))
 	return c.Status(http.StatusOK).JSON(resp)
-}
-
-type generatePostRequest struct {
-	Topic string `json:"topic"`
 }
 
 type generatePostResponse struct {
@@ -73,10 +66,6 @@ type generatePostResponse struct {
 	Usage         map[string]interface{} `json:"usage,omitempty"`
 	CreatedAt     string                 `json:"createdAt"`
 	LogId         string                 `json:"logId"`
-}
-
-type publishLinkedInPostRequest struct {
-	Text string `json:"text"`
 }
 
 // PublishLinkedInPost godoc
@@ -93,28 +82,30 @@ type publishLinkedInPostRequest struct {
 // @Security BearerAuth
 // @Router /linkedin/publish [post]
 func (h *PostHandler) PublishLinkedInPost(c *fiber.Ctx) error {
-	claims := c.Locals("user").(jwt.MapClaims)
-	userId, ok := claims["sub"].(string)
-	if !ok {
-		return c.Status(401).JSON(map[string]interface{}{"error": "Invalid user claims"})
+	user, err := GetUserFromContext(c, h.AuthService)
+	if err != nil {
+		return HandleUserContextError(c, err, "/linkedin/publish")
 	}
-	var req publishLinkedInPostRequest
-	if err := c.BodyParser(&req); err != nil || req.Text == "" {
-		return c.Status(400).JSON(map[string]interface{}{"error": "Missing text"})
+
+	var req PublishLinkedInPostRequest
+	if err := c.BodyParser(&req); err != nil {
+		return BadRequestError(c, err.Error())
 	}
-	user, err := h.AuthService.GetUserByID(c.Context(), userId)
-	if err != nil || user == nil {
-		return c.Status(404).JSON(map[string]interface{}{"error": "User not found"})
+
+	if err := ValidateStruct(&req); err != nil {
+		return ValidationError(c, err.Error())
 	}
+
 	if user.LinkedinAccessToken == "" || user.LinkedinPersonUrn == "" {
-		return c.Status(400).JSON(map[string]interface{}{"error": "LinkedIn not connected for this user"})
+		return BadRequestError(c, "LinkedIn not connected for this user")
 	}
-	// Chamar serviço de publicação (a ser implementado)
+
 	linkedinPostId, err := h.PostService.PublishOnLinkedIn(c.Context(), user.LinkedinAccessToken, user.LinkedinPersonUrn, req.Text)
 	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to publish on LinkedIn", "details": err.Error()})
+		return InternalError(c, "Failed to publish on LinkedIn: "+err.Error())
 	}
-	return c.JSON(map[string]interface{}{"status": "published", "linkedinPostId": linkedinPostId})
+
+	return c.JSON(fiber.Map{"status": "published", "linkedinPostId": linkedinPostId})
 }
 
 // @Summary List user posts
@@ -127,15 +118,20 @@ func (h *PostHandler) PublishLinkedInPost(c *fiber.Ctx) error {
 // @Router /posts [get]
 // @Security BearerAuth
 func (h *PostHandler) ListPosts(c *fiber.Ctx) error {
-	claims := c.Locals("user").(jwt.MapClaims)
-	userId, ok := claims["sub"].(string)
-	if !ok {
-		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user claims"})
+	userID, err := GetUserIDFromContext(c)
+	if err != nil {
+		return HandleUserContextError(c, err, "/posts")
 	}
-	userObjId, _ := primitive.ObjectIDFromHex(userId)
+
+	userObjId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return BadRequestError(c, "Invalid user ID")
+	}
+
 	posts, err := h.PostService.ListPosts(c.Context(), userObjId, 50)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return InternalError(c, err.Error())
 	}
+
 	return c.JSON(posts)
 }

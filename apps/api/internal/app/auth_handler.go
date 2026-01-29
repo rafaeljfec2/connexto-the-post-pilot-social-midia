@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/models"
 	"github.com/postpilot/api/internal/services"
@@ -30,12 +29,6 @@ func NewAuthHandler(authService services.AuthService) *AuthHandler {
 	return &AuthHandler{AuthService: authService}
 }
 
-type registerRequest struct {
-	Name     string `json:"name" example:"John Doe"`
-	Email    string `json:"email" example:"john@example.com"`
-	Password string `json:"password" example:"123456"`
-}
-
 // Register godoc
 // @Summary Register a new user
 // @Description Register a new user with name, email and password
@@ -47,24 +40,27 @@ type registerRequest struct {
 // @Failure 400 {object} map[string]interface{}
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
-	var req registerRequest
+	var req RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Logger.Warn("Invalid register payload", zap.Error(err), zap.String("endpoint", "/auth/register"))
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return BadRequestError(c, err.Error())
 	}
+
+	if err := ValidateStruct(&req); err != nil {
+		log.Logger.Warn("Register validation failed", zap.Error(err), zap.String("endpoint", "/auth/register"))
+		return ValidationError(c, err.Error())
+	}
+
 	user, err := h.AuthService.Register(c.Context(), req.Name, req.Email, req.Password)
 	if err != nil {
 		log.Logger.Warn("Register failed", zap.Error(err), zap.String("email", req.Email), zap.String("endpoint", "/auth/register"))
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return BadRequestError(c, err.Error())
 	}
+
 	log.Logger.Info("User registered", zap.String("userId", user.ID.Hex()), zap.String("email", user.Email), zap.String("endpoint", "/auth/register"))
 	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
-type loginRequest struct {
-	Email    string `json:"email" example:"john@example.com"`
-	Password string `json:"password" example:"123456"`
-}
 type loginResponse struct {
 	User  *models.User `json:"user"`
 	Token string       `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
@@ -81,26 +77,25 @@ type loginResponse struct {
 // @Failure 400 {object} map[string]interface{}
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
-	var req loginRequest
+	var req LoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Logger.Warn("Invalid login payload", zap.Error(err), zap.String("endpoint", "/auth/login"))
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return BadRequestError(c, err.Error())
 	}
+
+	if err := ValidateStruct(&req); err != nil {
+		log.Logger.Warn("Login validation failed", zap.Error(err), zap.String("endpoint", "/auth/login"))
+		return ValidationError(c, err.Error())
+	}
+
 	user, token, err := h.AuthService.Login(c.Context(), req.Email, req.Password)
 	if err != nil {
 		log.Logger.Warn("Login failed", zap.Error(err), zap.String("email", req.Email), zap.String("endpoint", "/auth/login"))
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return UnauthorizedError(c, "Invalid credentials")
 	}
+
 	log.Logger.Info("User login success", zap.String("userId", user.ID.Hex()), zap.String("email", user.Email), zap.String("endpoint", "/auth/login"))
 	return c.Status(fiber.StatusOK).JSON(loginResponse{User: user, Token: token})
-}
-
-type socialLoginRequest struct {
-	Provider   models.AuthProvider `json:"provider" example:"google" enums:"google,linkedin"`
-	ProviderId string              `json:"providerId" example:"123456789"`
-	Email      string              `json:"email" example:"john@example.com"`
-	Name       string              `json:"name" example:"John Doe"`
-	AvatarUrl  string              `json:"avatarUrl" example:"https://example.com/avatar.jpg"`
 }
 
 // SocialLogin godoc
@@ -114,20 +109,24 @@ type socialLoginRequest struct {
 // @Failure 400 {object} map[string]interface{}
 // @Router /auth/social [post]
 func (h *AuthHandler) SocialLogin(c *fiber.Ctx) error {
-	var req socialLoginRequest
+	var req SocialLoginRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return BadRequestError(c, err.Error())
 	}
-	user, token, err := h.AuthService.LoginWithSocial(c.Context(), req.Provider, req.ProviderId, req.Email, req.Name, req.AvatarUrl)
+
+	if err := ValidateStruct(&req); err != nil {
+		return ValidationError(c, err.Error())
+	}
+
+	provider := models.AuthProvider(req.Provider)
+	user, token, err := h.AuthService.LoginWithSocial(c.Context(), provider, req.ProviderId, req.Email, req.Name, req.AvatarUrl)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return BadRequestError(c, err.Error())
 	}
+
 	return c.Status(fiber.StatusOK).JSON(loginResponse{User: user, Token: token})
 }
 
-type refreshRequest struct {
-	RefreshToken string `json:"refreshToken" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
-}
 type refreshResponse struct {
 	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
@@ -143,21 +142,21 @@ type refreshResponse struct {
 // @Failure 400 {object} map[string]interface{}
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
-	var req refreshRequest
+	var req RefreshTokenRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return BadRequestError(c, err.Error())
 	}
+
+	if err := ValidateStruct(&req); err != nil {
+		return ValidationError(c, err.Error())
+	}
+
 	token, err := h.AuthService.RefreshJWT(req.RefreshToken)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return UnauthorizedError(c, "Invalid refresh token")
 	}
-	return c.Status(fiber.StatusOK).JSON(refreshResponse{Token: token})
-}
 
-type updateProfileRequest struct {
-	OpenAiApiKey string              `json:"openAiApiKey"`
-	OpenAiModel  string              `json:"openAiModel"`
-	DataSources  []models.DataSource `json:"dataSources"`
+	return c.Status(fiber.StatusOK).JSON(refreshResponse{Token: token})
 }
 
 // UpdateProfile godoc
@@ -175,33 +174,31 @@ type updateProfileRequest struct {
 // @Security BearerAuth
 // @Router /me [put]
 func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
-	claims := c.Locals("user").(jwt.MapClaims)
-	userId, ok := claims["sub"].(string)
-	if !ok {
-		log.Logger.Warn("Invalid user claims on update profile", zap.String("endpoint", "/me"))
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user claims"})
+	user, err := GetUserFromContext(c, h.AuthService)
+	if err != nil {
+		return HandleUserContextError(c, err, "/me")
 	}
+	userId := user.ID.Hex()
 
-	var req updateProfileRequest
+	var req UpdateProfileRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Logger.Warn("Invalid update profile payload", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/me"))
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return BadRequestError(c, err.Error())
 	}
 
-	user, err := h.AuthService.GetUserByID(c.Context(), userId)
-	if err != nil || user == nil {
-		log.Logger.Warn("User not found on update profile", zap.String("userId", userId), zap.String("endpoint", "/me"))
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	if err := ValidateStruct(&req); err != nil {
+		log.Logger.Warn("Update profile validation failed", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/me"))
+		return ValidationError(c, err.Error())
 	}
 
 	user.OpenAiApiKey = req.OpenAiApiKey
 	user.OpenAiModel = req.OpenAiModel
-	user.DataSources = req.DataSources
+	user.DataSources = convertDataSources(req.DataSources)
 
 	err = h.AuthService.UpdateUser(c.Context(), user)
 	if err != nil {
 		log.Logger.Error("Failed to update user profile", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/me"))
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return InternalError(c, err.Error())
 	}
 
 	log.Logger.Info("User profile updated", zap.String("userId", userId), zap.String("endpoint", "/me"))
@@ -218,14 +215,9 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Failure 404 {object} map[string]interface{}
 // @Router /me [get]
 func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
-	claims := c.Locals("user").(jwt.MapClaims)
-	userId, ok := claims["sub"].(string)
-	if !ok {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid user claims"})
-	}
-	user, err := h.AuthService.GetUserByID(c.Context(), userId)
-	if err != nil || user == nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	user, err := GetUserFromContext(c, h.AuthService)
+	if err != nil {
+		return HandleUserContextError(c, err, "/me")
 	}
 	return c.JSON(user)
 }
@@ -239,19 +231,12 @@ func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]interface{} "Exemplo: {\"error\": \"LinkedIn client ID or redirect URI not configured\" }"
 // @Router /auth/linkedin/url [get]
 func (h *AuthHandler) LinkedInAuthURL(c *fiber.Ctx) error {
-	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
-	redirectURI := os.Getenv("LINKEDIN_REDIRECT_URI")
-	if clientID == "" || redirectURI == "" {
-		return c.Status(500).JSON(map[string]interface{}{"error": "LinkedIn client ID or redirect URI not configured"})
+	provider := NewLinkedInOAuthProvider()
+	authURL, err := provider.GetAuthURL()
+	if err != nil {
+		return InternalError(c, err.Error())
 	}
-
-	authURL := fmt.Sprintf(
-		"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=%s&redirect_uri=%s&scope=openid%%20profile%%20email",
-		url.QueryEscape(clientID),
-		url.QueryEscape(redirectURI),
-	)
-
-	return c.JSON(map[string]string{"url": authURL})
+	return c.JSON(fiber.Map{"url": authURL})
 }
 
 type linkedinTokenResponse struct {
@@ -279,46 +264,8 @@ type linkedinEmailResponse struct {
 // @Failure 500 {object} map[string]interface{} "{ \"error\": \"Failed to get access token from LinkedIn\" }"
 // @Router /auth/linkedin/callback [get]
 func (h *AuthHandler) LinkedInCallback(c *fiber.Ctx) error {
-	code := c.Query("code")
-	if code == "" {
-		return c.Status(400).JSON(map[string]interface{}{"error": "Missing code from LinkedIn"})
-	}
-
-	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
-	clientSecret := os.Getenv("LINKEDIN_CLIENT_SECRET")
-	redirectURI := os.Getenv("LINKEDIN_REDIRECT_URI")
-
-	// Troca o code por access_token
-	token, err := exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI)
-	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to get access token from LinkedIn", "details": err.Error()})
-	}
-
-	// Busca dados do usuário via OpenID Connect
-	userInfo, err := fetchLinkedInUserInfo(token)
-	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to fetch LinkedIn userinfo", "details": err.Error()})
-	}
-
-	// Autentica/cria usuário
-	_, jwt, err := h.AuthService.LoginWithSocial(
-		c.Context(),
-		models.AuthProviderLinkedIn,
-		userInfo.Sub,
-		userInfo.Email,
-		userInfo.Name,
-		userInfo.Picture,
-	)
-	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to login or register user", "details": err.Error()})
-	}
-
-	frontendURL := os.Getenv("FRONT_END_URL")
-	if frontendURL == "" {
-		frontendURL = "http://localhost:3000/login"
-	}
-	redirectURL := fmt.Sprintf("%s?token=%s&provider=linkedin", frontendURL, jwt)
-	return c.Redirect(redirectURL, http.StatusTemporaryRedirect)
+	provider := NewLinkedInOAuthProvider()
+	return h.handleOAuthCallback(c, provider)
 }
 
 type linkedinUserInfo struct {
@@ -329,7 +276,10 @@ type linkedinUserInfo struct {
 }
 
 func fetchLinkedInUserInfo(token string) (*linkedinUserInfo, error) {
-	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/userinfo", nil)
+	req, err := http.NewRequest("GET", "https://api.linkedin.com/v2/userinfo", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
 	req.Header.Set("Authorization", bearerPrefix+token)
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -337,7 +287,10 @@ func fetchLinkedInUserInfo(token string) (*linkedinUserInfo, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
 
 	var userInfo linkedinUserInfo
 	if err := json.Unmarshal(body, &userInfo); err != nil {
@@ -359,7 +312,10 @@ func exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI stri
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
 
 	var tokenResp linkedinTokenResponse
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
@@ -377,19 +333,12 @@ func exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI stri
 // @Failure 500 {object} map[string]interface{} "{ \"error\": \"Google client ID or redirect URI not configured\" }"
 // @Router /auth/google/url [get]
 func (h *AuthHandler) GoogleAuthURL(c *fiber.Ctx) error {
-	clientID := os.Getenv("GOOGLE_CLIENT_ID")
-	redirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
-	if clientID == "" || redirectURI == "" {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Google client ID or redirect URI not configured"})
+	provider := NewGoogleOAuthProvider()
+	authURL, err := provider.GetAuthURL()
+	if err != nil {
+		return InternalError(c, err.Error())
 	}
-
-	authURL := fmt.Sprintf(
-		"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%s&redirect_uri=%s&scope=openid%%20email%%20profile&access_type=offline",
-		url.QueryEscape(clientID),
-		url.QueryEscape(redirectURI),
-	)
-
-	return c.JSON(map[string]string{"url": authURL})
+	return c.JSON(fiber.Map{"url": authURL})
 }
 
 // GoogleCallback godoc
@@ -403,95 +352,8 @@ func (h *AuthHandler) GoogleAuthURL(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]interface{} "{ \"error\": \"Failed to get access token from Google\" }"
 // @Router /auth/google/callback [get]
 func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
-	code := c.Query("code")
-	if code == "" {
-		return c.Status(400).JSON(map[string]interface{}{"error": "Missing code from Google"})
-	}
-
-	clientID := os.Getenv("GOOGLE_CLIENT_ID")
-	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	redirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
-
-	// Troca o code por access_token
-	token, err := exchangeGoogleCodeForToken(code, clientID, clientSecret, redirectURI)
-	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to get access token from Google", "details": err.Error()})
-	}
-
-	// Busca dados do usuário via OpenID Connect
-	userInfo, err := fetchGoogleUserInfo(token)
-	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to fetch Google userinfo", "details": err.Error()})
-	}
-
-	// Autentica/cria usuário
-	_, jwt, err := h.AuthService.LoginWithSocial(
-		c.Context(),
-		models.AuthProviderGoogle,
-		userInfo.Sub,
-		userInfo.Email,
-		userInfo.Name,
-		userInfo.Picture,
-	)
-	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to login or register user", "details": err.Error()})
-	}
-
-	frontendURL := os.Getenv("FRONT_END_URL")
-	if frontendURL == "" {
-		frontendURL = "http://localhost:3000/login"
-	}
-	redirectURL := fmt.Sprintf("%s?token=%s&provider=google", frontendURL, jwt)
-	return c.Redirect(redirectURL, http.StatusTemporaryRedirect)
-}
-
-type googleUserInfo struct {
-	Sub     string `json:"sub"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Picture string `json:"picture"`
-}
-
-func exchangeGoogleCodeForToken(code, clientID, clientSecret, redirectURI string) (string, error) {
-	data := url.Values{}
-	data.Set("grant_type", "authorization_code")
-	data.Set("code", code)
-	data.Set("redirect_uri", redirectURI)
-	data.Set("client_id", clientID)
-	data.Set("client_secret", clientSecret)
-
-	resp, err := http.PostForm("https://oauth2.googleapis.com/token", data)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	var tokenResp struct {
-		AccessToken string `json:"access_token"`
-	}
-	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		return "", err
-	}
-	return tokenResp.AccessToken, nil
-}
-
-func fetchGoogleUserInfo(token string) (*googleUserInfo, error) {
-	req, _ := http.NewRequest("GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
-	req.Header.Set("Authorization", bearerPrefix+token)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	var userInfo googleUserInfo
-	if err := json.Unmarshal(body, &userInfo); err != nil {
-		return nil, err
-	}
-	return &userInfo, nil
+	provider := NewGoogleOAuthProvider()
+	return h.handleOAuthCallback(c, provider)
 }
 
 // Gera URL de consentimento para publicação no LinkedIn
@@ -533,15 +395,14 @@ func (h *AuthHandler) LinkedInPublishURL(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Router /auth/linkedin/publish-callback [get]
 func (h *AuthHandler) LinkedInPublishCallback(c *fiber.Ctx) error {
-	claims := c.Locals("user").(jwt.MapClaims)
-	userId, ok := claims["sub"].(string)
-	if !ok {
-		return c.Status(401).JSON(map[string]interface{}{"error": "Invalid user claims"})
+	user, err := GetUserFromContext(c, h.AuthService)
+	if err != nil {
+		return HandleUserContextError(c, err, "/auth/linkedin/publish-callback")
 	}
 
 	code := c.Query("code")
 	if code == "" {
-		return c.Status(400).JSON(map[string]interface{}{"error": "Missing code from LinkedIn"})
+		return BadRequestError(c, "Missing code from LinkedIn")
 	}
 
 	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
@@ -550,34 +411,31 @@ func (h *AuthHandler) LinkedInPublishCallback(c *fiber.Ctx) error {
 
 	token, err := exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI)
 	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to get access token from LinkedIn", "details": err.Error()})
+		return InternalError(c, "Failed to get access token from LinkedIn: "+err.Error())
 	}
 	if token == "" {
-		return c.Status(400).JSON(map[string]interface{}{"error": "Invalid access token from LinkedIn. Token is empty."})
+		return BadRequestError(c, "Invalid access token from LinkedIn. Token is empty.")
 	}
 
-	user, err := h.AuthService.GetUserByID(c.Context(), userId)
-	if err != nil || user == nil {
-		return c.Status(404).JSON(map[string]interface{}{"error": "User not found"})
-	}
-
-	// Buscar URN do usuário no LinkedIn
 	personUrn, err := fetchLinkedInPersonURN(token)
 	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to fetch LinkedIn person URN", "details": err.Error()})
+		return InternalError(c, "Failed to fetch LinkedIn person URN: "+err.Error())
 	}
 	user.LinkedinAccessToken = token
 	user.LinkedinPersonUrn = personUrn
 	err = h.AuthService.UpdateUser(c.Context(), user)
 	if err != nil {
-		return c.Status(500).JSON(map[string]interface{}{"error": "Failed to save LinkedIn token", "details": err.Error()})
+		return InternalError(c, "Failed to save LinkedIn token: "+err.Error())
 	}
 
-	return c.JSON(map[string]string{"status": "ok"})
+	return c.JSON(fiber.Map{"status": "ok"})
 }
 
 func fetchLinkedInPersonURN(accessToken string) (string, error) {
-	req, _ := http.NewRequest("GET", "https://api.linkedin.com/v2/userinfo", nil)
+	req, err := http.NewRequest("GET", "https://api.linkedin.com/v2/userinfo", nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -585,8 +443,11 @@ func fetchLinkedInPersonURN(accessToken string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("LinkedIn /v2/userinfo response:", string(body)) // Log para depuração
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+	log.Logger.Debug("LinkedIn /v2/userinfo response", zap.String("body", string(body)))
 	var data struct {
 		Sub string `json:"sub"`
 	}

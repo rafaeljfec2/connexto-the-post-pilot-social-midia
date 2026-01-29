@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -150,7 +150,7 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 		return "", err
 	}
 	defer resp.Body.Close()
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 	var respMap map[string]interface{}
 	_ = json.Unmarshal(respBody, &respMap)
 	logEntry.Response = respMap
