@@ -5,7 +5,7 @@
   "description": "Social media automation platform with AI integration",
   "scripts": {
     "dev:web": "pnpm --filter post-pilot-web dev",
-    "dev:api": "cd apps/api && go run main.go",
+    "dev:api": "cd apps/api && go build -o ./bin/api . && ./bin/api",
     "build:web": "pnpm --filter post-pilot-web build",
     "build:api": "pnpm --filter api build",
     "test:web": "pnpm --filter post-pilot-web test",
@@ -13,7 +13,7 @@
     "lint:web": "pnpm --filter post-pilot-web lint",
     "lint:api": "pnpm --filter api lint",
     "setup": "pnpm install && cd apps/api && go mod tidy && cd ../..",
-    "dev": "pnpm run dev:web & cd apps/api && go run main.go",
+    "dev": "pnpm run dev:web & cd apps/api && go build -o ./bin/api . && ./bin/api",
     "swagger": "cd apps/api && swag init --parseDependency --parseInternal",
     "update-swagger": "cd apps/api && swag init -g main.go"
   },
