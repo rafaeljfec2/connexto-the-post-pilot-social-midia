@@ -99,7 +99,7 @@ export function Profile() {
       try {
         setConnectingId(socialId)
         const url = await authService.getLinkedInPublishUrl()
-        window.location.href = url
+        globalThis.location.href = url
       } catch {
         toast({
           title: 'Erro ao conectar',

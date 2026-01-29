@@ -86,7 +86,16 @@ export function LandingPage() {
 
       <footer className="border-t py-6">
         <div className="container text-center text-sm text-muted-foreground">
-          © 2024 Post Pilot. Todos os direitos reservados.
+          © 2026{' '}
+          <a
+            href="https://www.connexto.com.br/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary"
+          >
+            Created by Connexto Tecnologia
+          </a>
+          {'. '}Todos os direitos reservados.
         </div>
       </footer>
     </div>

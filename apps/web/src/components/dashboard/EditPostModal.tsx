@@ -100,9 +100,9 @@ export function EditPostModal({ post, onClose }: EditPostModalProps) {
               </label>
               <Button variant="ghost" size="sm" className="h-8 gap-1.5" onClick={handleCopy}>
                 {copied ? (
-                  <Check className="h-3.5 w-3.5 text-success" />
+                  <Check className="size-3.5 text-success" />
                 ) : (
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className="size-3.5" />
                 )}
                 {copied ? 'Copiado!' : 'Copiar'}
               </Button>
@@ -142,9 +142,9 @@ export function EditPostModal({ post, onClose }: EditPostModalProps) {
             className="gap-2"
           >
             {updateMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Save className="h-4 w-4" />
+              <Save className="size-4" />
             )}
             Salvar alterações
           </Button>

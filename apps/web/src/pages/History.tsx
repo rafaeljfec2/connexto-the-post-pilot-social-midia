@@ -81,7 +81,7 @@ export function History() {
           <p className="text-muted-foreground">Visualize todos os posts gerados pela IA.</p>
         </div>
         <Button variant="outline" className="w-full gap-2 sm:w-auto">
-          <Download className="h-4 w-4" />
+          <Download className="size-4" />
           Exportar
         </Button>
       </div>
@@ -90,19 +90,19 @@ export function History() {
         <StatCard
           title="Total de Posts"
           value={allPosts.length.toString()}
-          icon={<FileText className="h-5 w-5 text-primary" />}
+          icon={<FileText className="size-5 text-primary" />}
           description="Posts gerados"
         />
         <StatCard
           title="Publicados"
           value={totalPublished.toString()}
-          icon={<Send className="h-5 w-5 text-primary" />}
+          icon={<Send className="size-5 text-primary" />}
           description="No LinkedIn"
         />
         <StatCard
           title="Tokens Utilizados"
           value={totalEngagement.toLocaleString()}
-          icon={<TrendingUp className="h-5 w-5 text-primary" />}
+          icon={<TrendingUp className="size-5 text-primary" />}
           description="Total consumido"
         />
       </div>
@@ -112,7 +112,7 @@ export function History() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-lg font-medium">Atividade ao Longo do Tempo</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Filter className="size-4 text-muted-foreground" />
               <Select defaultValue="30d">
                 <SelectTrigger className="h-9 w-full sm:w-36">
                   <SelectValue placeholder="Período" />
@@ -141,11 +141,11 @@ export function History() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="size-8 animate-spin text-primary" />
             </div>
           ) : allPosts.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-12">
-              <FileText className="h-8 w-8 text-muted-foreground" />
+              <FileText className="size-8 text-muted-foreground" />
               <p className="text-muted-foreground">Nenhum post encontrado</p>
             </div>
           ) : (
@@ -166,7 +166,7 @@ export function History() {
                     <TableRow key={post.id}>
                       <TableCell className="max-w-[200px]">
                         <div className="flex items-center gap-2">
-                          <Linkedin className="h-4 w-4 shrink-0 text-primary" />
+                          <Linkedin className="size-4 shrink-0 text-primary" />
                           <span className="truncate text-sm">{truncateText(post.input, 40)}</span>
                         </div>
                       </TableCell>
@@ -199,7 +199,7 @@ export function History() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="ghost" onClick={() => setSelectedPost(post)}>
-                          <Eye className="h-4 w-4" />
+                          <Eye className="size-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
