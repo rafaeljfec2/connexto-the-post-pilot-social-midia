@@ -207,55 +207,70 @@ export function Profile() {
                 className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
               >
                 <div className="flex items-center gap-3">
-                  <div className={social.color}>{social.icon}</div>
+                  <div className={social.available ? social.color : 'text-muted-foreground'}>
+                    {social.icon}
+                  </div>
                   <div>
-                    <p className="text-sm font-medium">{social.name}</p>
+                    <p
+                      className={`text-sm font-medium ${!social.available ? 'text-muted-foreground' : ''}`}
+                    >
+                      {social.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {social.connected ? 'Conta conectada' : 'Não conectado'}
+                      {social.connected
+                        ? 'Conta conectada'
+                        : social.available
+                          ? 'Não conectado'
+                          : 'Integração em breve'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {social.connected ? (
-                    <Badge variant="outline" className="gap-1 border-success text-success">
-                      <CheckCircle2 className="size-3" />
-                      Conectado
-                    </Badge>
+                    <>
+                      <Badge variant="outline" className="gap-1 border-success text-success">
+                        <CheckCircle2 className="size-3" />
+                        Conectado
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDisconnect(social.id)}
+                        disabled={disconnectingId === social.id}
+                      >
+                        {disconnectingId === social.id ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          'Desconectar'
+                        )}
+                      </Button>
+                    </>
+                  ) : social.available ? (
+                    <>
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-muted-foreground text-muted-foreground"
+                      >
+                        <XCircle className="size-3" />
+                        Desconectado
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleConnect(social.id)}
+                        disabled={connectingId === social.id}
+                      >
+                        {connectingId === social.id ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          'Conectar'
+                        )}
+                      </Button>
+                    </>
                   ) : (
-                    <Badge
-                      variant="outline"
-                      className="gap-1 border-muted-foreground text-muted-foreground"
-                    >
-                      <XCircle className="size-3" />
-                      Desconectado
+                    <Badge variant="outline" className="gap-1 border-primary/50 text-primary">
+                      Em breve
                     </Badge>
-                  )}
-                  {social.connected ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDisconnect(social.id)}
-                      disabled={disconnectingId === social.id}
-                    >
-                      {disconnectingId === social.id ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        'Desconectar'
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleConnect(social.id)}
-                      disabled={!social.available || connectingId === social.id}
-                    >
-                      {connectingId === social.id ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        'Conectar'
-                      )}
-                    </Button>
                   )}
                 </div>
               </div>
