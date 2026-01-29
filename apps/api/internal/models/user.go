@@ -51,15 +51,59 @@ type User struct {
 }
 
 // MarshalJSON implementa a interface json.Marshaler para User
+// Oculta campos sensíveis como API keys e tokens
 func (u *User) MarshalJSON() ([]byte, error) {
-	type Alias User
 	return json.Marshal(&struct {
-		ID string `json:"id"`
-		*Alias
+		ID                 string       `json:"id"`
+		Email              string       `json:"email"`
+		Name               string       `json:"name"`
+		AvatarUrl          string       `json:"avatarUrl,omitempty"`
+		Provider           AuthProvider `json:"provider"`
+		ProviderId         string       `json:"providerId,omitempty"`
+		OpenAiApiKeyMasked string       `json:"openAiApiKey,omitempty"`
+		OpenAiModel        string       `json:"openAiModel,omitempty"`
+		HasLinkedinToken   bool         `json:"hasLinkedinToken"`
+		LinkedinPersonUrn  string       `json:"linkedinPersonUrn,omitempty"`
+		DataSources        []DataSource `json:"dataSources,omitempty"`
+		CreatedAt          string       `json:"createdAt"`
+		UpdatedAt          string       `json:"updatedAt"`
+		LastLogin          *string      `json:"lastLogin,omitempty"`
 	}{
-		ID:    u.ID.Hex(),
-		Alias: (*Alias)(u),
+		ID:                 u.ID.Hex(),
+		Email:              u.Email,
+		Name:               u.Name,
+		AvatarUrl:          u.AvatarUrl,
+		Provider:           u.Provider,
+		ProviderId:         u.ProviderId,
+		OpenAiApiKeyMasked: maskApiKey(u.OpenAiApiKey),
+		OpenAiModel:        u.OpenAiModel,
+		HasLinkedinToken:   u.LinkedinAccessToken != "",
+		LinkedinPersonUrn:  u.LinkedinPersonUrn,
+		DataSources:        u.DataSources,
+		CreatedAt:          u.CreatedAt.Format("2006-01-01T15:04:05Z07:00"),
+		UpdatedAt:          u.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		LastLogin:          formatTimePtr(u.LastLogin),
 	})
+}
+
+// maskApiKey retorna uma versão mascarada da API key para exibição segura
+func maskApiKey(key string) string {
+	if key == "" {
+		return ""
+	}
+	if len(key) <= 8 {
+		return "sk-****"
+	}
+	return key[:7] + "****" + key[len(key)-4:]
+}
+
+// formatTimePtr formata um ponteiro de time para string
+func formatTimePtr(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.Format("2006-01-02T15:04:05Z07:00")
+	return &s
 }
 
 // UnmarshalJSON implementa a interface json.Unmarshaler para User

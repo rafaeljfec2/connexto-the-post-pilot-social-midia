@@ -1,10 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { useForm, useFieldArray } from 'react-hook-form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
+import { authService } from '@/services/auth.service'
+import { useToast } from '@/components/ui/use-toast'
 import {
   Key,
   Bot,
@@ -15,19 +23,33 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
+
+interface DataSourceInput {
+  type: 'rss' | 'devto' | 'hackernews'
+  url: string
+  tags?: string[]
+}
 
 interface SettingsFormValues {
   openaiApiKey: string
   openaiModel: string
-  dataSources: { url: string }[]
+  dataSources: DataSourceInput[]
 }
 
+const modelOptions = [
+  { value: 'gpt-4', label: 'GPT-4', description: 'Mais inteligente, mais lento' },
+  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'Rápido e inteligente' },
+  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Mais rápido, mais barato' },
+]
+
 export function Settings() {
-  const { user } = useAuth()
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState('')
+  const { user, refreshUser } = useAuth()
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   const {
     register,
@@ -39,7 +61,7 @@ export function Settings() {
     defaultValues: {
       openaiApiKey: '',
       openaiModel: 'gpt-4',
-      dataSources: [{ url: '' }],
+      dataSources: [{ type: 'rss', url: '', tags: [] }],
     },
   })
 
@@ -48,33 +70,74 @@ export function Settings() {
     name: 'dataSources',
   })
 
+  const hasApiKeyConfigured = Boolean(user?.openAiApiKey && user.openAiApiKey.length > 0)
+
   useEffect(() => {
     if (user) {
       reset({
-        openaiApiKey: user.openAiApiKey ?? '',
+        openaiApiKey: '', // Nunca preencher com a key mascarada - sempre vazio
         openaiModel: user.openAiModel ?? 'gpt-4',
-        dataSources: user.dataSources?.length
-          ? user.dataSources.map((ds: { url: string }) => ({ url: ds.url ?? '' }))
-          : [{ url: '' }],
+        dataSources:
+          user.dataSources && user.dataSources.length > 0
+            ? user.dataSources.map((ds) => ({
+                type: ds.type ?? 'rss',
+                url: ds.url ?? '',
+                tags: ds.tags ?? [],
+              }))
+            : [{ type: 'rss', url: '', tags: [] }],
       })
       setIsLoading(false)
     }
   }, [user, reset])
 
-  const onSubmit = async () => {
-    setSuccess(false)
-    setError('')
+  const onSubmit = async (data: SettingsFormValues) => {
+    if (!user) return
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError('Erro ao salvar configurações. Tente novamente.')
+      const validDataSources = data.dataSources
+        .filter((ds) => ds.url.trim() !== '')
+        .map((ds) => ({
+          type: ds.type,
+          url: ds.url,
+          tags: ds.tags ?? [],
+        }))
+
+      const updateData: {
+        openAiApiKey?: string
+        openAiModel?: string
+        dataSources?: typeof validDataSources
+      } = {
+        openAiModel: data.openaiModel,
+        dataSources: validDataSources,
+      }
+
+      // Só envia API key se o usuário digitou uma nova
+      if (data.openaiApiKey.trim()) {
+        updateData.openAiApiKey = data.openaiApiKey
+      }
+
+      await authService.updateProfile(updateData)
+      await refreshUser()
+
+      // Limpa o campo de API key após salvar
+      reset((prev) => ({ ...prev, openaiApiKey: '' }))
+
+      toast({
+        title: 'Configurações salvas',
+        description: 'Suas configurações foram atualizadas com sucesso.',
+      })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro ao salvar',
+        description: errorMessage,
+        variant: 'destructive',
+      })
     }
   }
 
   const handleAddDataSource = () => {
-    prepend({ url: '' }, { shouldFocus: true })
+    prepend({ type: 'rss', url: '', tags: [] }, { shouldFocus: true })
   }
 
   if (isLoading) {
@@ -112,19 +175,51 @@ export function Settings() {
                 <Key className="size-4 text-muted-foreground" />
                 OpenAI API Key
               </label>
-              <Input
-                id="openaiApiKey"
-                placeholder="sk-..."
-                type="password"
-                autoComplete="off"
-                {...register('openaiApiKey', { required: 'API Key é obrigatória' })}
-              />
+              <div className="relative">
+                <Input
+                  id="openaiApiKey"
+                  placeholder="sk-..."
+                  type={showApiKey ? 'text' : 'password'}
+                  autoComplete="off"
+                  {...register('openaiApiKey', { required: 'API Key é obrigatória' })}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                >
+                  {showApiKey ? (
+                    <EyeOff className="size-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="size-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+              {hasApiKeyConfigured && (
+                <p className="font-mono text-xs text-muted-foreground">
+                  Chave atual: {user?.openAiApiKey}
+                </p>
+              )}
               {errors.openaiApiKey && (
                 <p className="flex items-center gap-1 text-xs text-destructive">
                   <AlertCircle className="size-3" />
                   {errors.openaiApiKey.message}
                 </p>
               )}
+              <p className="text-xs text-muted-foreground">
+                Obtenha sua API Key em{' '}
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  platform.openai.com/api-keys
+                </a>
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -132,10 +227,29 @@ export function Settings() {
                 <Bot className="size-4 text-muted-foreground" />
                 Modelo
               </label>
-              <Input
-                id="openaiModel"
-                placeholder="gpt-4, gpt-3.5-turbo, etc."
-                {...register('openaiModel', { required: 'Modelo é obrigatório' })}
+              <Controller
+                name="openaiModel"
+                control={control}
+                rules={{ required: 'Modelo é obrigatório' }}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um modelo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modelOptions.map(model => (
+                        <SelectItem key={model.value} value={model.value}>
+                          <div className="flex flex-col">
+                            <span>{model.label}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {model.description}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
               {errors.openaiModel && (
                 <p className="flex items-center gap-1 text-xs text-destructive">
@@ -143,18 +257,16 @@ export function Settings() {
                   {errors.openaiModel.message}
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-xs">
-                  gpt-4
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  gpt-4-turbo
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  gpt-3.5-turbo
-                </Badge>
-              </div>
             </div>
+
+            {hasApiKeyConfigured && (
+              <div className="rounded-lg border border-success/20 bg-success/5 p-3">
+                <p className="flex items-center gap-2 text-sm text-success">
+                  <CheckCircle2 className="size-4" />
+                  API Key configurada
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -186,16 +298,26 @@ export function Settings() {
             <div className="max-h-[300px] space-y-3 overflow-y-auto pr-1">
               {fields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
+                  <Controller
+                    name={`dataSources.${index}.type`}
+                    control={control}
+                    render={({ field: typeField }) => (
+                      <Select value={typeField.value} onValueChange={typeField.onChange}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="rss">RSS</SelectItem>
+                          <SelectItem value="devto">Dev.to</SelectItem>
+                          <SelectItem value="hackernews">Hacker News</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                   <Input
                     type="url"
-                    placeholder="https://exemplo.com"
-                    {...register(`dataSources.${index}.url`, {
-                      required: 'Informe a URL',
-                      pattern: {
-                        value: /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/,
-                        message: 'URL inválida',
-                      },
-                    })}
+                    placeholder="https://exemplo.com/feed"
+                    {...register(`dataSources.${index}.url`)}
                     className="flex-1"
                   />
                   <Button
@@ -211,30 +333,13 @@ export function Settings() {
                 </div>
               ))}
             </div>
-            {errors.dataSources && (
-              <p className="mt-2 flex items-center gap-1 text-xs text-destructive">
-                <AlertCircle className="size-3" />
-                Verifique as URLs informadas
-              </p>
-            )}
+            <p className="mt-3 text-xs text-muted-foreground">
+              Adicione feeds RSS, blogs ou sites para que a IA busque sugestões de conteúdo.
+            </p>
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            {success && (
-              <p className="flex items-center gap-2 text-sm text-success">
-                <CheckCircle2 className="size-4" />
-                Configurações salvas com sucesso!
-              </p>
-            )}
-            {error && (
-              <p className="flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="size-4" />
-                {error}
-              </p>
-            )}
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
           <Button type="submit" disabled={isSubmitting} className="w-full gap-2 sm:w-auto">
             {isSubmitting ? (
               <Loader2 className="size-4 animate-spin" />

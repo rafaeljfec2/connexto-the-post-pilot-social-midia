@@ -4,12 +4,23 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import { SuggestionCard } from '@/components/suggestions/SuggestionCard'
 import { useSuggestions, SuggestionsFilters } from '@/hooks/useSuggestions'
 import { useGeneratePost } from '@/hooks/usePosts'
 import { useToast } from '@/components/ui/use-toast'
 import type { Article } from '@/services/suggestions.service'
-import { Sparkles, Search, Loader2, RefreshCw, Filter, FileText } from 'lucide-react'
+import {
+  Sparkles,
+  Search,
+  Loader2,
+  RefreshCw,
+  Filter,
+  FileText,
+  Wand2,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 
 const quickFilters = [
   { label: 'Todos', value: '' },
@@ -25,6 +36,9 @@ export function Suggestions() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState('')
   const [generatingId, setGeneratingId] = useState<string | null>(null)
+  const [manualTopic, setManualTopic] = useState('')
+  const [isGeneratingManual, setIsGeneratingManual] = useState(false)
+  const [showManualInput, setShowManualInput] = useState(true)
 
   const generatePost = useGeneratePost()
 
@@ -94,6 +108,53 @@ export function Suggestions() {
     })
   }
 
+  const handleGenerateManual = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!manualTopic.trim()) {
+      toast({
+        title: 'Digite um tema',
+        description: 'Informe um tema ou descrição para gerar o post.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setIsGeneratingManual(true)
+      const response = await generatePost.mutateAsync({ topic: manualTopic })
+
+      toast({
+        title: 'Post gerado com sucesso!',
+        description: 'Redirecionando para a lista de posts...',
+      })
+
+      setManualTopic('')
+
+      navigate('/app/pending', {
+        state: { generatedContent: response, highlight: response.logId },
+      })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
+
+      if (errorMessage.includes('API') || errorMessage.includes('key')) {
+        toast({
+          title: 'Configure sua API Key',
+          description: 'Vá em Configurações e adicione sua chave da OpenAI.',
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Erro ao gerar post',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+      }
+    } finally {
+      setIsGeneratingManual(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-1">
@@ -103,6 +164,77 @@ export function Suggestions() {
         </p>
       </div>
 
+      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardContent className="p-4 md:p-6">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between"
+            onClick={() => setShowManualInput(!showManualInput)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+                <Wand2 className="size-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">Gerar Post com IA</h3>
+                <p className="text-sm text-muted-foreground">
+                  Digite um tema e deixe a IA criar o conteúdo
+                </p>
+              </div>
+            </div>
+            {showManualInput ? (
+              <ChevronUp className="size-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="size-5 text-muted-foreground" />
+            )}
+          </button>
+
+          {showManualInput && (
+            <form onSubmit={handleGenerateManual} className="mt-4 space-y-4">
+              <Textarea
+                placeholder="Descreva o tema do post que você deseja criar...&#10;&#10;Exemplo: 'As 5 principais tendências de IA para 2026 no mercado de tecnologia'"
+                value={manualTopic}
+                onChange={e => setManualTopic(e.target.value)}
+                rows={4}
+                className="resize-none text-base"
+                disabled={isGeneratingManual}
+              />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  {manualTopic.length} caracteres • Quanto mais detalhado, melhor o resultado
+                </p>
+                <Button
+                  type="submit"
+                  className="gap-2"
+                  disabled={isGeneratingManual || !manualTopic.trim()}
+                >
+                  {isGeneratingManual ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="size-4" />
+                      Gerar Post
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">ou busque inspiração</span>
+        </div>
+      </div>
+
       <Card className="overflow-hidden">
         <CardContent className="p-4 md:p-6">
           <form onSubmit={handleSearch} className="space-y-4">
@@ -110,7 +242,7 @@ export function Suggestions() {
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Digite um tema, palavra-chave ou cole um link..."
+                placeholder="Buscar sugestões por tema, palavra-chave..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="h-12 pl-10 text-base"
@@ -133,17 +265,17 @@ export function Suggestions() {
               ))}
             </div>
             <div className="flex gap-2">
-              <Button type="submit" className="gap-2" disabled={isLoading}>
+              <Button type="submit" variant="outline" className="gap-2" disabled={isLoading}>
                 {isLoading ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <Sparkles className="size-4" />
+                  <Search className="size-4" />
                 )}
                 Buscar Sugestões
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={() => refetch()}
                 disabled={isLoading}

@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/models"
 	"github.com/postpilot/api/internal/repositories"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 )
 
 type PostService interface {
@@ -48,16 +50,27 @@ type GeneratePostResponse struct {
 
 func (s *postService) GeneratePost(ctx context.Context, user *models.User, topic string) (*GeneratePostResponse, error) {
 	createdAt := time.Now().UTC()
+	userId := user.ID.Hex()
+
+	log.Logger.Info("Starting post generation",
+		zap.String("userId", userId),
+		zap.String("topic", topic),
+		zap.Time("startedAt", createdAt),
+	)
+
 	logEntry := &models.PostGenerationLog{
 		UserID:    user.ID,
 		Input:     topic,
 		CreatedAt: createdAt,
 		Status:    "started",
 	}
-	// Salva log inicial (status started)
 	logId, _ := s.logRepository.Create(ctx, logEntry)
 
-	// Monta prompt
+	log.Logger.Debug("Post generation log created",
+		zap.String("userId", userId),
+		zap.String("logId", logId.Hex()),
+	)
+
 	prompt := "Gere uma sugestão de post para redes sociais a partir do seguinte tema/artigo: " + topic
 	apiKey := user.OpenAiApiKey
 	model := user.OpenAiModel
@@ -65,7 +78,15 @@ func (s *postService) GeneratePost(ctx context.Context, user *models.User, topic
 		model = "gpt-3.5-turbo"
 	}
 
+	log.Logger.Info("Calling OpenAI API",
+		zap.String("userId", userId),
+		zap.String("model", model),
+		zap.Int("promptLength", len(prompt)),
+	)
+
+	startTime := time.Now()
 	output, usedModel, usage, err := s.openAIClient.GenerateText(ctx, apiKey, model, prompt)
+	duration := time.Since(startTime)
 
 	update := bson.M{
 		"$set": bson.M{
@@ -75,11 +96,52 @@ func (s *postService) GeneratePost(ctx context.Context, user *models.User, topic
 			"status": "success",
 		},
 	}
+
 	if err != nil {
 		update["$set"].(bson.M)["status"] = "error"
 		update["$set"].(bson.M)["error"] = err.Error()
+
+		log.Logger.Error("Post generation failed",
+			zap.String("userId", userId),
+			zap.String("logId", logId.Hex()),
+			zap.String("model", usedModel),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+	} else {
+		promptTokens := 0
+		completionTokens := 0
+		totalTokens := 0
+		if usage != nil {
+			if v, ok := usage["prompt_tokens"].(float64); ok {
+				promptTokens = int(v)
+			}
+			if v, ok := usage["completion_tokens"].(float64); ok {
+				completionTokens = int(v)
+			}
+			if v, ok := usage["total_tokens"].(float64); ok {
+				totalTokens = int(v)
+			}
+		}
+
+		log.Logger.Info("Post generation completed successfully",
+			zap.String("userId", userId),
+			zap.String("logId", logId.Hex()),
+			zap.String("model", usedModel),
+			zap.Duration("duration", duration),
+			zap.Int("outputLength", len(output)),
+			zap.Int("promptTokens", promptTokens),
+			zap.Int("completionTokens", completionTokens),
+			zap.Int("totalTokens", totalTokens),
+		)
+
+		log.Logger.Debug("Generated post content preview",
+			zap.String("userId", userId),
+			zap.String("logId", logId.Hex()),
+			zap.String("outputPreview", truncateString(output, 200)),
+		)
 	}
-	// Atualiza log com resultado final
+
 	_ = s.logRepository.UpdateByID(ctx, logId, update)
 
 	return &GeneratePostResponse{
@@ -91,7 +153,19 @@ func (s *postService) GeneratePost(ctx context.Context, user *models.User, topic
 	}, err
 }
 
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
+
 func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, personUrn, text string) (string, error) {
+	log.Logger.Info("Starting LinkedIn publish",
+		zap.String("personUrn", personUrn),
+		zap.Int("textLength", len(text)),
+	)
+
 	payload := map[string]interface{}{
 		"author":         personUrn,
 		"lifecycleState": "PUBLISHED",
@@ -109,7 +183,7 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 	}
 	createdAt := time.Now().UTC()
 	logEntry := &models.SocialPostStories{
-		UserID:      primitive.NilObjectID, // Preencher se possível
+		UserID:      primitive.NilObjectID,
 		Network:     "linkedin",
 		PostContent: text,
 		Payload:     payload,
@@ -117,10 +191,12 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 		UpdatedAt:   createdAt,
 		Status:      "started",
 	}
-	// logId, _ := s.storiesRepository.Create(ctx, logEntry)
 
 	body, err := json.Marshal(payload)
 	if err != nil {
+		log.Logger.Error("Failed to marshal LinkedIn payload",
+			zap.Error(err),
+		)
 		logEntry.Status = "error"
 		logEntry.Error = err.Error()
 		logEntry.UpdatedAt = time.Now().UTC()
@@ -130,6 +206,9 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 
 	req, err := http.NewRequest("POST", "https://api.linkedin.com/v2/ugcPosts", bytes.NewBuffer(body))
 	if err != nil {
+		log.Logger.Error("Failed to create LinkedIn request",
+			zap.Error(err),
+		)
 		logEntry.Status = "error"
 		logEntry.Error = err.Error()
 		logEntry.UpdatedAt = time.Now().UTC()
@@ -140,9 +219,20 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Restli-Protocol-Version", "2.0.0")
 
+	log.Logger.Debug("Sending request to LinkedIn API",
+		zap.String("url", "https://api.linkedin.com/v2/ugcPosts"),
+	)
+
+	startTime := time.Now()
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
+	duration := time.Since(startTime)
+
 	if err != nil {
+		log.Logger.Error("LinkedIn API request failed",
+			zap.Error(err),
+			zap.Duration("duration", duration),
+		)
 		logEntry.Status = "error"
 		logEntry.Error = err.Error()
 		logEntry.UpdatedAt = time.Now().UTC()
@@ -156,13 +246,26 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 	logEntry.Response = respMap
 	logEntry.UpdatedAt = time.Now().UTC()
 
+	log.Logger.Info("LinkedIn API response received",
+		zap.Int("statusCode", resp.StatusCode),
+		zap.Duration("duration", duration),
+	)
+
 	if resp.StatusCode == 401 || resp.StatusCode == 403 {
+		log.Logger.Warn("LinkedIn token expired or invalid",
+			zap.Int("statusCode", resp.StatusCode),
+			zap.String("response", string(respBody)),
+		)
 		logEntry.Status = "error"
 		logEntry.Error = "LinkedIn token expired or invalid. Please reconnect your LinkedIn account."
 		_, _ = s.storiesRepository.Create(ctx, logEntry)
 		return "", fmt.Errorf(logEntry.Error)
 	}
 	if resp.StatusCode != 201 && resp.StatusCode != 200 {
+		log.Logger.Error("LinkedIn API error",
+			zap.Int("statusCode", resp.StatusCode),
+			zap.String("response", string(respBody)),
+		)
 		logEntry.Status = "error"
 		logEntry.Error = fmt.Sprintf("linkedin api error: %s", string(respBody))
 		_, _ = s.storiesRepository.Create(ctx, logEntry)
@@ -173,17 +276,28 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 	}
 	_ = json.Unmarshal(respBody, &result)
 	if result.ID != "" {
+		log.Logger.Info("LinkedIn post published successfully",
+			zap.String("linkedinPostId", result.ID),
+			zap.Duration("totalDuration", duration),
+		)
 		logEntry.Status = "success"
 		logEntry.ExternalPostID = result.ID
 		_, _ = s.storiesRepository.Create(ctx, logEntry)
 		return result.ID, nil
 	}
 	if postId := resp.Header.Get("x-restli-id"); postId != "" {
+		log.Logger.Info("LinkedIn post published successfully (from header)",
+			zap.String("linkedinPostId", postId),
+			zap.Duration("totalDuration", duration),
+		)
 		logEntry.Status = "success"
 		logEntry.ExternalPostID = postId
 		_, _ = s.storiesRepository.Create(ctx, logEntry)
 		return postId, nil
 	}
+	log.Logger.Error("LinkedIn publish failed - no post ID returned",
+		zap.String("response", string(respBody)),
+	)
 	logEntry.Status = "error"
 	logEntry.Error = "Unknown error: no post ID returned"
 	_, _ = s.storiesRepository.Create(ctx, logEntry)

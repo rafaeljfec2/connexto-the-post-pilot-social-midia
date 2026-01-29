@@ -191,6 +191,13 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 		return BadRequestError(c, err.Error())
 	}
 
+	log.Logger.Info("Update profile request received",
+		zap.String("userId", userId),
+		zap.String("openAiModel", req.OpenAiModel),
+		zap.Bool("hasApiKey", req.OpenAiApiKey != ""),
+		zap.Int("dataSourcesCount", len(req.DataSources)),
+	)
+
 	if err := ValidateStruct(&req); err != nil {
 		log.Logger.Warn("Update profile validation failed", zap.Error(err), zap.String("userId", userId), zap.String("endpoint", "/me"))
 		return ValidationError(c, err.Error())

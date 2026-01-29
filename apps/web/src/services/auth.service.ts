@@ -18,10 +18,9 @@ export interface User {
   avatarUrl?: string
   provider: AuthProvider
   providerId?: string
-  openAiApiKey?: string
+  openAiApiKey?: string // Mascarada (ex: sk-proj****xxxx)
   openAiModel?: string
-  linkedinAccessToken?: string
-  linkedinRefreshToken?: string
+  hasLinkedinToken?: boolean
   linkedinPersonUrn?: string
   dataSources?: DataSource[]
   createdAt: string
@@ -102,6 +101,15 @@ class AuthService {
 
   async updateUser(user: User): Promise<User> {
     const response = await api.put<User>(this.AUTH_ENDPOINTS.me, user)
+    return response.data
+  }
+
+  async updateProfile(data: {
+    openAiApiKey?: string
+    openAiModel?: string
+    dataSources?: DataSource[]
+  }): Promise<User> {
+    const response = await api.put<User>(this.AUTH_ENDPOINTS.me, data)
     return response.data
   }
 

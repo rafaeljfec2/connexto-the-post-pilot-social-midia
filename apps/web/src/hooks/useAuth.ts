@@ -124,12 +124,10 @@ export function useAuth() {
         queryFn: authService.getCurrentUser,
       })
       if (updatedUser) {
-        setUser({ ...updatedUser, linkedinAccessToken: response.access_token })
-        authUtils.setUser({ ...updatedUser, linkedinAccessToken: response.access_token })
-        queryClient.setQueryData(['user'], {
-          ...updatedUser,
-          linkedinAccessToken: response.access_token,
-        })
+        const userWithLinkedin = { ...updatedUser, hasLinkedinToken: true }
+        setUser(userWithLinkedin)
+        authUtils.setUser(userWithLinkedin)
+        queryClient.setQueryData(['user'], userWithLinkedin)
       }
       return response
     },
@@ -138,6 +136,19 @@ export function useAuth() {
   const logout = () => {
     clearUserData(queryClient)
     navigate('/login')
+  }
+
+  const refreshUser = async () => {
+    const updatedUser = await queryClient.fetchQuery({
+      queryKey: ['user'],
+      queryFn: authService.getCurrentUser,
+    })
+    if (updatedUser) {
+      setUser(updatedUser)
+      authUtils.setUser(updatedUser)
+      queryClient.setQueryData(['user'], updatedUser)
+    }
+    return updatedUser
   }
 
   return {
@@ -152,5 +163,6 @@ export function useAuth() {
     handleLinkedInCallback: handleLinkedInCallback.mutateAsync,
     handleLinkedInPublishCallback: handleLinkedInPublishCallback.mutateAsync,
     logout,
+    refreshUser,
   }
 }

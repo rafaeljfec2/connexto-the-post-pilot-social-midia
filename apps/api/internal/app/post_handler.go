@@ -58,7 +58,12 @@ func (h *PostHandler) Generate(c *fiber.Ctx) error {
 		return InternalError(c, err.Error())
 	}
 
-	log.Logger.Info("Post generated", zap.String("userId", userId), zap.String("endpoint", endpointPostsGenerate))
+	log.Logger.Info("Post generation request completed",
+		zap.String("userId", userId),
+		zap.String("endpoint", endpointPostsGenerate),
+		zap.String("logId", resp.LogId),
+		zap.String("model", resp.Model),
+	)
 	return c.Status(http.StatusOK).JSON(resp)
 }
 
@@ -84,28 +89,61 @@ type generatePostResponse struct {
 // @Security BearerAuth
 // @Router /linkedin/publish [post]
 func (h *PostHandler) PublishLinkedInPost(c *fiber.Ctx) error {
+	const endpoint = "/linkedin/publish"
 	user, err := GetUserFromContext(c, h.AuthService)
 	if err != nil {
-		return HandleUserContextError(c, err, "/linkedin/publish")
+		return HandleUserContextError(c, err, endpoint)
 	}
+	userId := user.ID.Hex()
 
 	var req PublishLinkedInPostRequest
 	if err := c.BodyParser(&req); err != nil {
+		log.Logger.Warn("Invalid LinkedIn publish payload",
+			zap.Error(err),
+			zap.String("userId", userId),
+			zap.String("endpoint", endpoint),
+		)
 		return BadRequestError(c, err.Error())
 	}
 
 	if err := ValidateStruct(&req); err != nil {
+		log.Logger.Warn("LinkedIn publish validation failed",
+			zap.Error(err),
+			zap.String("userId", userId),
+			zap.String("endpoint", endpoint),
+		)
 		return ValidationError(c, err.Error())
 	}
 
 	if user.LinkedinAccessToken == "" || user.LinkedinPersonUrn == "" {
+		log.Logger.Warn("LinkedIn not connected for user",
+			zap.String("userId", userId),
+			zap.String("endpoint", endpoint),
+		)
 		return BadRequestError(c, "LinkedIn not connected for this user")
 	}
 
+	log.Logger.Info("Starting LinkedIn publish request",
+		zap.String("userId", userId),
+		zap.String("endpoint", endpoint),
+		zap.Int("textLength", len(req.Text)),
+	)
+
 	linkedinPostId, err := h.PostService.PublishOnLinkedIn(c.Context(), user.LinkedinAccessToken, user.LinkedinPersonUrn, req.Text)
 	if err != nil {
+		log.Logger.Error("Failed to publish on LinkedIn",
+			zap.Error(err),
+			zap.String("userId", userId),
+			zap.String("endpoint", endpoint),
+		)
 		return InternalError(c, "Failed to publish on LinkedIn: "+err.Error())
 	}
+
+	log.Logger.Info("LinkedIn publish completed successfully",
+		zap.String("userId", userId),
+		zap.String("endpoint", endpoint),
+		zap.String("linkedinPostId", linkedinPostId),
+	)
 
 	return c.JSON(fiber.Map{"status": "published", "linkedinPostId": linkedinPostId})
 }
@@ -120,20 +158,36 @@ func (h *PostHandler) PublishLinkedInPost(c *fiber.Ctx) error {
 // @Router /posts [get]
 // @Security BearerAuth
 func (h *PostHandler) ListPosts(c *fiber.Ctx) error {
+	const endpoint = "/posts"
 	userID, err := GetUserIDFromContext(c)
 	if err != nil {
-		return HandleUserContextError(c, err, "/posts")
+		return HandleUserContextError(c, err, endpoint)
 	}
 
 	userObjId, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
+		log.Logger.Warn("Invalid user ID format",
+			zap.String("userId", userID),
+			zap.String("endpoint", endpoint),
+		)
 		return BadRequestError(c, "Invalid user ID")
 	}
 
 	posts, err := h.PostService.ListPosts(c.Context(), userObjId, 50)
 	if err != nil {
+		log.Logger.Error("Failed to list posts",
+			zap.Error(err),
+			zap.String("userId", userID),
+			zap.String("endpoint", endpoint),
+		)
 		return InternalError(c, err.Error())
 	}
+
+	log.Logger.Info("Posts listed successfully",
+		zap.String("userId", userID),
+		zap.String("endpoint", endpoint),
+		zap.Int("count", len(posts)),
+	)
 
 	return c.JSON(posts)
 }
