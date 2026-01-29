@@ -24,10 +24,10 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: Number.parseInt(process.env.VITE_PORT ?? '3000'),
     proxy: {
       '/the-post-pilot/v1': {
-        target: 'http://localhost:8081',
+        target: process.env.VITE_API_URL ?? 'http://localhost:8081',
         changeOrigin: true,
         secure: false,
       },

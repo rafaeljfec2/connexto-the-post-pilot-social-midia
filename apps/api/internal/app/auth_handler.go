@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/postpilot/api/internal/log"
@@ -378,6 +379,11 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Router /auth/linkedin/publish-url [get]
 func (h *AuthHandler) LinkedInPublishURL(c *fiber.Ctx) error {
+	user, err := GetUserFromContext(c, h.AuthService)
+	if err != nil {
+		return HandleUserContextError(c, err, "/auth/linkedin/publish-url")
+	}
+
 	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
 	redirectURI := os.Getenv("LINKEDIN_PUBLISH_REDIRECT_URI")
 	if clientID == "" || redirectURI == "" {
@@ -385,12 +391,15 @@ func (h *AuthHandler) LinkedInPublishURL(c *fiber.Ctx) error {
 	}
 	scopes := "openid profile email w_member_social"
 
+	// Encode userId in state parameter for callback identification
+	state := "publish:" + user.ID.Hex()
+
 	authURL := fmt.Sprintf(
 		"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&state=%s",
 		url.QueryEscape(clientID),
 		url.QueryEscape(redirectURI),
-		scopes,
-		"publish", // pode ser randomizado para produção
+		url.QueryEscape(scopes),
+		url.QueryEscape(state),
 	)
 	return c.JSON(map[string]string{"url": authURL})
 }
@@ -401,20 +410,36 @@ func (h *AuthHandler) LinkedInPublishURL(c *fiber.Ctx) error {
 // @Tags LinkedIn
 // @Produce json
 // @Param code query string true "Authorization code from LinkedIn"
-// @Success 200 {object} map[string]string "Exemplo: {\"access_token\": \"...\" }"
+// @Success 302 "Redirects to frontend profile page"
 // @Failure 400 {object} map[string]interface{} "Exemplo: {\"error\": \"Missing code from LinkedIn\" }"
 // @Failure 500 {object} map[string]interface{} "Exemplo: {\"error\": \"Failed to get access token from LinkedIn\" }"
-// @Security BearerAuth
 // @Router /auth/linkedin/publish-callback [get]
 func (h *AuthHandler) LinkedInPublishCallback(c *fiber.Ctx) error {
-	user, err := GetUserFromContext(c, h.AuthService)
-	if err != nil {
-		return HandleUserContextError(c, err, "/auth/linkedin/publish-callback")
+	frontendURL := os.Getenv("FRONT_END_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000"
 	}
+	frontendURL = strings.TrimSuffix(frontendURL, "/login")
 
 	code := c.Query("code")
+	state := c.Query("state")
+
 	if code == "" {
-		return BadRequestError(c, "Missing code from LinkedIn")
+		log.Logger.Error("LinkedIn publish callback: missing code")
+		return c.Redirect(frontendURL+"/app/profile?linkedin=error&reason=missing_code", fiber.StatusTemporaryRedirect)
+	}
+
+	// Extract userId from state (format: "publish:userId")
+	if !strings.HasPrefix(state, "publish:") {
+		log.Logger.Error("LinkedIn publish callback: invalid state", zap.String("state", state))
+		return c.Redirect(frontendURL+"/app/profile?linkedin=error&reason=invalid_state", fiber.StatusTemporaryRedirect)
+	}
+	userIdHex := strings.TrimPrefix(state, "publish:")
+
+	user, err := h.AuthService.GetUserByID(c.Context(), userIdHex)
+	if err != nil {
+		log.Logger.Error("LinkedIn publish callback: user not found", zap.String("userId", userIdHex), zap.Error(err))
+		return c.Redirect(frontendURL+"/app/profile?linkedin=error&reason=user_not_found", fiber.StatusTemporaryRedirect)
 	}
 
 	clientID := os.Getenv("LINKEDIN_CLIENT_ID")
@@ -423,24 +448,34 @@ func (h *AuthHandler) LinkedInPublishCallback(c *fiber.Ctx) error {
 
 	token, err := exchangeLinkedInCodeForToken(code, clientID, clientSecret, redirectURI)
 	if err != nil {
-		return InternalError(c, "Failed to get access token from LinkedIn: "+err.Error())
+		log.Logger.Error("LinkedIn publish callback: token exchange failed", zap.Error(err))
+		return c.Redirect(frontendURL+"/app/profile?linkedin=error&reason=token_exchange_failed", fiber.StatusTemporaryRedirect)
 	}
 	if token == "" {
-		return BadRequestError(c, "Invalid access token from LinkedIn. Token is empty.")
+		log.Logger.Error("LinkedIn publish callback: empty token received")
+		return c.Redirect(frontendURL+"/app/profile?linkedin=error&reason=empty_token", fiber.StatusTemporaryRedirect)
 	}
 
 	personUrn, err := fetchLinkedInPersonURN(token)
 	if err != nil {
-		return InternalError(c, "Failed to fetch LinkedIn person URN: "+err.Error())
+		log.Logger.Error("LinkedIn publish callback: failed to fetch person URN", zap.Error(err))
+		return c.Redirect(frontendURL+"/app/profile?linkedin=error&reason=urn_fetch_failed", fiber.StatusTemporaryRedirect)
 	}
+
 	user.LinkedinAccessToken = token
 	user.LinkedinPersonUrn = personUrn
 	err = h.AuthService.UpdateUser(c.Context(), user)
 	if err != nil {
-		return InternalError(c, "Failed to save LinkedIn token: "+err.Error())
+		log.Logger.Error("LinkedIn publish callback: failed to save token", zap.Error(err))
+		return c.Redirect(frontendURL+"/app/profile?linkedin=error&reason=save_failed", fiber.StatusTemporaryRedirect)
 	}
 
-	return c.JSON(fiber.Map{"status": "ok"})
+	log.Logger.Info("LinkedIn publish token saved successfully",
+		zap.String("userId", user.ID.Hex()),
+		zap.String("personUrn", personUrn),
+	)
+
+	return c.Redirect(frontendURL+"/app/profile?linkedin=connected", fiber.StatusTemporaryRedirect)
 }
 
 func fetchLinkedInPersonURN(accessToken string) (string, error) {

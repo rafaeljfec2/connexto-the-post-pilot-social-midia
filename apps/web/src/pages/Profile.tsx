@@ -4,47 +4,124 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { useState } from 'react'
-import { CheckCircle2, XCircle, User, Mail, Edit2, ExternalLink } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { CheckCircle2, XCircle, User, Mail, Edit2, ExternalLink, Loader2 } from 'lucide-react'
 import { FaLinkedin, FaXTwitter, FaFacebook, FaInstagram } from 'react-icons/fa6'
 import { useAuth } from '@/hooks/useAuth'
+import { authService } from '@/services/auth.service'
+import { useToast } from '@/components/ui/use-toast'
 
 interface SocialConnection {
+  readonly id: string
   readonly name: string
   readonly icon: React.ReactNode
   readonly connected: boolean
   readonly color: string
+  readonly available: boolean
 }
 
 export function Profile() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
+  const { toast } = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [connectingId, setConnectingId] = useState<string | null>(null)
 
-  const [socials] = useState<SocialConnection[]>([
+  const isLinkedInConnected = Boolean(user?.hasLinkedinToken)
+
+  useEffect(() => {
+    const linkedinStatus = searchParams.get('linkedin')
+    const reason = searchParams.get('reason')
+
+    if (linkedinStatus === 'connected') {
+      refreshUser()
+      toast({
+        title: 'LinkedIn conectado!',
+        description: 'Agora você pode publicar posts diretamente no LinkedIn.',
+      })
+      setSearchParams({})
+    } else if (linkedinStatus === 'error') {
+      const errorMessages: Record<string, string> = {
+        missing_code: 'Código de autorização não encontrado.',
+        invalid_state: 'Estado de autenticação inválido.',
+        user_not_found: 'Usuário não encontrado.',
+        token_exchange_failed: 'Falha ao trocar código por token.',
+        empty_token: 'Token de acesso vazio.',
+        urn_fetch_failed: 'Falha ao obter dados do perfil.',
+        save_failed: 'Falha ao salvar token.',
+      }
+      toast({
+        title: 'Erro ao conectar LinkedIn',
+        description: errorMessages[reason ?? ''] ?? 'Ocorreu um erro inesperado. Tente novamente.',
+        variant: 'destructive',
+      })
+      setSearchParams({})
+    }
+  }, [searchParams, setSearchParams, toast, refreshUser])
+
+  const socials: SocialConnection[] = [
     {
+      id: 'linkedin',
       name: 'LinkedIn',
       icon: <FaLinkedin className="size-5" />,
-      connected: true,
+      connected: isLinkedInConnected,
       color: 'text-[#0A66C2]',
+      available: true,
     },
     {
+      id: 'twitter',
       name: 'X',
       icon: <FaXTwitter className="size-5" />,
       connected: false,
       color: 'text-foreground',
+      available: false,
     },
     {
+      id: 'facebook',
       name: 'Facebook',
       icon: <FaFacebook className="size-5" />,
       connected: false,
       color: 'text-[#1877F2]',
+      available: false,
     },
     {
+      id: 'instagram',
       name: 'Instagram',
       icon: <FaInstagram className="size-5" />,
       connected: false,
       color: 'text-[#E4405F]',
+      available: false,
     },
-  ])
+  ]
+
+  const handleConnect = async (socialId: string) => {
+    if (socialId === 'linkedin') {
+      try {
+        setConnectingId(socialId)
+        const url = await authService.getLinkedInPublishUrl()
+        window.location.href = url
+      } catch {
+        toast({
+          title: 'Erro ao conectar',
+          description: 'Não foi possível obter a URL de autorização do LinkedIn.',
+          variant: 'destructive',
+        })
+        setConnectingId(null)
+      }
+    } else {
+      toast({
+        title: 'Em breve',
+        description: `Integração com ${socialId} será implementada em breve.`,
+      })
+    }
+  }
+
+  const handleDisconnect = (socialId: string) => {
+    toast({
+      title: 'Desconectar',
+      description: `Para desconectar ${socialId}, entre em contato com o suporte.`,
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -109,7 +186,7 @@ export function Profile() {
           <CardContent className="space-y-3">
             {socials.map(social => (
               <div
-                key={social.name}
+                key={social.id}
                 className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
               >
                 <div className="flex items-center gap-3">
@@ -136,12 +213,35 @@ export function Profile() {
                       Desconectado
                     </Badge>
                   )}
-                  <Button variant={social.connected ? 'ghost' : 'outline'} size="sm">
-                    {social.connected ? 'Desconectar' : 'Conectar'}
-                  </Button>
+                  {social.connected ? (
+                    <Button variant="ghost" size="sm" onClick={() => handleDisconnect(social.id)}>
+                      Desconectar
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleConnect(social.id)}
+                      disabled={!social.available || connectingId === social.id}
+                    >
+                      {connectingId === social.id ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        'Conectar'
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
+
+            {!isLinkedInConnected && (
+              <div className="mt-4 rounded-lg border border-warning/20 bg-warning/5 p-3">
+                <p className="text-sm text-warning">
+                  Conecte seu LinkedIn para publicar posts diretamente da plataforma.
+                </p>
+              </div>
+            )}
 
             <div className="pt-3">
               <Button variant="link" className="h-auto gap-1 p-0 text-sm">

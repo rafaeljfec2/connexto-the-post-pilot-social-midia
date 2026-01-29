@@ -39,6 +39,7 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *Ar
 	auth.Post("/refresh", authHandler.RefreshToken)
 	auth.Get("/linkedin/url", authHandler.LinkedInAuthURL)
 	auth.Get("/linkedin/callback", authHandler.LinkedInCallback)
+	auth.Get("/linkedin/publish-callback", authHandler.LinkedInPublishCallback)
 	auth.Get("/google/url", authHandler.GoogleAuthURL)
 	auth.Get("/google/callback", authHandler.GoogleCallback)
 
@@ -51,6 +52,6 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *Ar
 	protected.Post("/posts/generate", postHandler.Generate)
 	protected.Get("/posts", postHandler.ListPosts)
 	protected.Get("/auth/linkedin/publish-url", authHandler.LinkedInPublishURL)
-	protected.Get("/auth/linkedin/publish-callback", authHandler.LinkedInPublishCallback)
+	protected.Delete("/auth/linkedin/disconnect", authHandler.DisconnectLinkedIn)
 	protected.Post("/linkedin/publish", postHandler.PublishLinkedInPost)
 }

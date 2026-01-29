@@ -113,6 +113,11 @@ class AuthService {
     return response.data
   }
 
+  async getLinkedInPublishUrl(): Promise<string> {
+    const response = await api.get<{ url: string }>('/the-post-pilot/v1/auth/linkedin/publish-url')
+    return response.data.url
+  }
+
   setToken(token: string): void {
     console.log('Armazenando token:', token ? 'Presente' : 'Ausente')
     localStorage.setItem('token', token)
