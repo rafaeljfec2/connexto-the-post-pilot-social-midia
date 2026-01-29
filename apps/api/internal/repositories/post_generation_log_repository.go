@@ -34,6 +34,13 @@ func NewPostGenerationLogRepository() (PostGenerationLogRepository, error) {
 	}, nil
 }
 
+// NewPostGenerationLogRepositoryWithDB creates repository with injected database (for Wire DI)
+func NewPostGenerationLogRepositoryWithDB(database *mongo.Database) PostGenerationLogRepository {
+	return &postGenerationLogRepository{
+		collection: database.Collection("post_generation_logs"),
+	}
+}
+
 func (r *postGenerationLogRepository) Create(ctx context.Context, logEntry *models.PostGenerationLog) (primitive.ObjectID, error) {
 	res, err := r.collection.InsertOne(ctx, logEntry)
 	if err != nil {

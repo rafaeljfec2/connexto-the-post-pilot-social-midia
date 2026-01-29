@@ -30,6 +30,13 @@ func NewSocialPostStoriesRepository() (SocialPostStoriesRepository, error) {
 	}, nil
 }
 
+// NewSocialPostStoriesRepositoryWithDB creates repository with injected database (for Wire DI)
+func NewSocialPostStoriesRepositoryWithDB(database *mongo.Database) SocialPostStoriesRepository {
+	return &socialPostStoriesRepository{
+		collection: database.Collection("social_post_stories"),
+	}
+}
+
 func (r *socialPostStoriesRepository) Create(ctx context.Context, logEntry *models.SocialPostStories) (primitive.ObjectID, error) {
 	res, err := r.collection.InsertOne(ctx, logEntry)
 	if err != nil {

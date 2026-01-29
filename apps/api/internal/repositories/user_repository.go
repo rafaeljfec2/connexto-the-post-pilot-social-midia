@@ -35,6 +35,13 @@ func NewUserRepository() (UserRepository, error) {
 	}, nil
 }
 
+// NewUserRepositoryWithDB creates a new UserRepository with injected database (for Wire DI)
+func NewUserRepositoryWithDB(database *mongo.Database) UserRepository {
+	return &userRepository{
+		collection: database.Collection("users"),
+	}
+}
+
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	user := &models.User{}
 	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(user)

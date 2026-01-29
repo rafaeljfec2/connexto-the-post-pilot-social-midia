@@ -8,10 +8,9 @@ import (
 	"github.com/joho/godotenv"
 
 	appPkg "github.com/postpilot/api/internal/app"
+	"github.com/postpilot/api/internal/di"
 	"github.com/postpilot/api/internal/log"
 	"github.com/postpilot/api/internal/middleware"
-	"github.com/postpilot/api/internal/repositories"
-	"github.com/postpilot/api/internal/services"
 	"go.uber.org/zap"
 )
 
@@ -38,32 +37,31 @@ func main() {
 		port = "8081"
 	}
 
-	app := fiber.New(fiber.Config{
+	// Initialize dependencies using Wire DI
+	application, err := di.InitializeApp()
+	if err != nil {
+		log.Logger.Fatal("Failed to initialize application dependencies", zap.Error(err))
+	}
+
+	fiberApp := fiber.New(fiber.Config{
 		AppName: "Post Pilot API",
 	})
 
-	// Middlewares globais
-	app.Use(cors.New())
-	app.Use(middleware.RateLimit())
-	app.Use(log.StructuredLogger())
+	// Global middlewares
+	fiberApp.Use(cors.New())
+	fiberApp.Use(middleware.RateLimit())
+	fiberApp.Use(log.StructuredLogger())
 
-	repo, err := repositories.NewUserRepository()
-	if err != nil {
-		log.Logger.Fatal("Failed to initialize user repository", zap.Error(err))
-	}
-	authService := services.NewAuthService(repo)
-	authHandler := appPkg.NewAuthHandler(authService)
-
-	articleService := services.NewArticleService()
-	articleHandler := appPkg.NewArticleHandler(articleService, authService)
-
-	postService := services.NewPostService()
-	postHandler := appPkg.NewPostHandler(postService, authService)
-
-	appPkg.RegisterRoutes(app, authHandler, articleHandler, postHandler)
+	// Register routes with injected handlers
+	appPkg.RegisterRoutes(
+		fiberApp,
+		application.AuthHandler,
+		application.ArticleHandler,
+		application.PostHandler,
+	)
 
 	log.Logger.Info("Starting Fiber server", zap.String("port", port))
-	if err := app.Listen(":" + port); err != nil {
+	if err := fiberApp.Listen(":" + port); err != nil {
 		log.Logger.Fatal("Fiber server failed", zap.Error(err))
 	}
 }
