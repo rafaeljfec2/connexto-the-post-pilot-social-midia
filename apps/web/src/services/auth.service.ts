@@ -118,6 +118,10 @@ class AuthService {
     return response.data.url
   }
 
+  async disconnectLinkedIn(): Promise<void> {
+    await api.delete('/the-post-pilot/v1/auth/linkedin/disconnect')
+  }
+
   setToken(token: string): void {
     console.log('Armazenando token:', token ? 'Presente' : 'Ausente')
     localStorage.setItem('token', token)

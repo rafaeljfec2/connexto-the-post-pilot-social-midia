@@ -116,11 +116,28 @@ export function Profile() {
     }
   }
 
-  const handleDisconnect = (socialId: string) => {
-    toast({
-      title: 'Desconectar',
-      description: `Para desconectar ${socialId}, entre em contato com o suporte.`,
-    })
+  const [disconnectingId, setDisconnectingId] = useState<string | null>(null)
+
+  const handleDisconnect = async (socialId: string) => {
+    if (socialId === 'linkedin') {
+      try {
+        setDisconnectingId(socialId)
+        await authService.disconnectLinkedIn()
+        await refreshUser()
+        toast({
+          title: 'LinkedIn desconectado',
+          description: 'Sua conta do LinkedIn foi desconectada com sucesso.',
+        })
+      } catch {
+        toast({
+          title: 'Erro ao desconectar',
+          description: 'Não foi possível desconectar o LinkedIn.',
+          variant: 'destructive',
+        })
+      } finally {
+        setDisconnectingId(null)
+      }
+    }
   }
 
   return (
@@ -214,8 +231,17 @@ export function Profile() {
                     </Badge>
                   )}
                   {social.connected ? (
-                    <Button variant="ghost" size="sm" onClick={() => handleDisconnect(social.id)}>
-                      Desconectar
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDisconnect(social.id)}
+                      disabled={disconnectingId === social.id}
+                    >
+                      {disconnectingId === social.id ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        'Desconectar'
+                      )}
                     </Button>
                   ) : (
                     <Button

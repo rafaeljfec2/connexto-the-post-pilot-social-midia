@@ -369,6 +369,35 @@ func (h *AuthHandler) GoogleCallback(c *fiber.Ctx) error {
 	return h.handleOAuthCallback(c, provider)
 }
 
+// DisconnectLinkedIn godoc
+// @Summary Disconnect LinkedIn account
+// @Description Removes LinkedIn access token and person URN from user profile
+// @Tags LinkedIn
+// @Produce json
+// @Success 200 {object} map[string]string "Exemplo: {\"message\": \"LinkedIn disconnected successfully\" }"
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /auth/linkedin/disconnect [delete]
+func (h *AuthHandler) DisconnectLinkedIn(c *fiber.Ctx) error {
+	user, err := GetUserFromContext(c, h.AuthService)
+	if err != nil {
+		return HandleUserContextError(c, err, "/auth/linkedin/disconnect")
+	}
+
+	user.LinkedinAccessToken = ""
+	user.LinkedinPersonUrn = ""
+
+	err = h.AuthService.UpdateUser(c.Context(), user)
+	if err != nil {
+		log.Logger.Error("Failed to disconnect LinkedIn", zap.Error(err), zap.String("userId", user.ID.Hex()))
+		return InternalError(c, "Failed to disconnect LinkedIn")
+	}
+
+	log.Logger.Info("LinkedIn disconnected successfully", zap.String("userId", user.ID.Hex()))
+	return c.JSON(fiber.Map{"message": "LinkedIn disconnected successfully"})
+}
+
 // Gera URL de consentimento para publicação no LinkedIn
 // @Summary Get LinkedIn publish consent URL
 // @Description Returns the LinkedIn OAuth URL for publishing posts (w_member_social)
