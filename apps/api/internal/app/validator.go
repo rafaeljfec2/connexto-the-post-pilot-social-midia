@@ -111,5 +111,6 @@ type GeneratePostRequest struct {
 }
 
 type PublishLinkedInPostRequest struct {
-	Text string `json:"text" validate:"required,min=1,max=3000"`
+	Text      string `json:"text" validate:"required,min=1,max=3000"`
+	PostLogID string `json:"postLogId" validate:"omitempty"`
 }

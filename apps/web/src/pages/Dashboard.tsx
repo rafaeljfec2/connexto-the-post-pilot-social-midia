@@ -15,6 +15,12 @@ interface KpiData {
   readonly icon: React.ReactNode
 }
 
+function getChangeTypeClass(changeType?: 'positive' | 'negative' | 'neutral'): string {
+  if (changeType === 'positive') return 'text-success'
+  if (changeType === 'negative') return 'text-destructive'
+  return 'text-muted-foreground'
+}
+
 function StatCard({ title, value, change, changeType, icon }: KpiData) {
   return (
     <Card className="overflow-hidden">
@@ -30,19 +36,7 @@ function StatCard({ title, value, change, changeType, icon }: KpiData) {
             >
               {value}
             </motion.p>
-            {change && (
-              <p
-                className={`text-xs ${
-                  changeType === 'positive'
-                    ? 'text-success'
-                    : changeType === 'negative'
-                      ? 'text-destructive'
-                      : 'text-muted-foreground'
-                }`}
-              >
-                {change}
-              </p>
-            )}
+            {change && <p className={`text-xs ${getChangeTypeClass(changeType)}`}>{change}</p>}
           </div>
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
@@ -92,7 +86,7 @@ export function Dashboard() {
   const safePosts = Array.isArray(posts) ? posts : []
 
   const pendingCount = safePosts.filter(
-    p => p.status === 'success' || p.status === 'Pendente' || p.status === 'started'
+    p => p.status === 'success' || p.status === 'started'
   ).length
 
   const publishedCount = safePosts.filter(p => p.status === 'published').length

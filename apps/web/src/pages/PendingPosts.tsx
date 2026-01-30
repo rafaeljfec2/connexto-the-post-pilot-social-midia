@@ -94,10 +94,8 @@ export function PendingPosts() {
 
   const safePosts: Post[] = Array.isArray(posts) ? posts : []
 
-  const pendingPosts = safePosts.filter(
-    p => p.status === 'success' || p.status === 'Pendente' || p.status === 'started'
-  )
-  const scheduledPosts = safePosts.filter(p => p.status === 'scheduled')
+  const pendingPosts = safePosts.filter(p => p.status === 'success' || p.status === 'started')
+  const scheduledPosts: Post[] = [] // Scheduled functionality not implemented yet
   const publishedPosts = safePosts.filter(p => p.status === 'published')
 
   const handleEdit = (post: Post) => {

@@ -54,3 +54,14 @@ export function useDeletePost() {
     },
   })
 }
+
+export function useDeleteLinkedInPost() {
+  const queryClient = useQueryClient()
+
+  return useMutation<{ status: string }, Error, string>({
+    mutationFn: postLogId => postsService.deleteLinkedInPost(postLogId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: POSTS_QUERY_KEY })
+    },
+  })
+}

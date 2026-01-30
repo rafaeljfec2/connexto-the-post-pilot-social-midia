@@ -54,4 +54,5 @@ func RegisterRoutes(app *fiber.App, authHandler *AuthHandler, articleHandler *Ar
 	protected.Get("/auth/linkedin/publish-url", authHandler.LinkedInPublishURL)
 	protected.Delete("/auth/linkedin/disconnect", authHandler.DisconnectLinkedIn)
 	protected.Post("/linkedin/publish", postHandler.PublishLinkedInPost)
+	protected.Delete("/linkedin/post/:postLogId", postHandler.DeleteLinkedInPost)
 }

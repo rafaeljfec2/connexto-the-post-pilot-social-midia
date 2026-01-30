@@ -1,4 +1,14 @@
-import { Download, Eye, FileText, Filter, Linkedin, Loader2, Send, TrendingUp } from 'lucide-react'
+import {
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  Linkedin,
+  Loader2,
+  Send,
+  Trash2,
+  TrendingUp,
+} from 'lucide-react'
 import { useState } from 'react'
 import type { Post } from '@/services/posts.service'
 import { EditPostModal } from '@/components/dashboard/EditPostModal'
@@ -21,7 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { usePosts } from '@/hooks/usePosts'
+import { useToast } from '@/components/ui/use-toast'
+import { useDeleteLinkedInPost, usePosts } from '@/hooks/usePosts'
 
 interface StatCardProps {
   readonly title: string
@@ -61,21 +72,30 @@ function truncateText(text: string, maxLength = 50): string {
   return text.slice(0, maxLength).trim() + '...'
 }
 
-function getStatusVariant(status: string): 'default' | 'destructive' | 'secondary' {
+function getStatusVariant(status: string): 'default' | 'destructive' | 'secondary' | 'outline' {
   if (status === 'published') return 'default'
   if (status === 'error') return 'destructive'
+  if (status === 'deleted') return 'outline'
   return 'secondary'
 }
 
 function getStatusLabel(status: string): string {
-  if (status === 'success') return 'Pendente'
-  if (status === 'published') return 'Publicado'
-  return status
+  const statusMap: Record<string, string> = {
+    started: 'Gerando...',
+    success: 'Pendente',
+    published: 'Publicado',
+    error: 'Erro',
+    deleted: 'Deletado',
+  }
+  return statusMap[status] ?? status
 }
 
 export function History() {
   const { data: posts, isLoading } = usePosts()
+  const deleteLinkedInPost = useDeleteLinkedInPost()
+  const { toast } = useToast()
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null)
 
   const safePosts = Array.isArray(posts) ? posts : []
 
@@ -84,6 +104,38 @@ export function History() {
 
   const totalPublished = publishedPosts.length
   const totalEngagement = publishedPosts.reduce((acc, p) => acc + (p.usage?.total_tokens ?? 0), 0)
+
+  const handleDeletePost = async (post: Post) => {
+    if (post.status !== 'published') {
+      toast({
+        title: 'Ação não permitida',
+        description: 'Apenas posts publicados podem ser deletados do LinkedIn.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (!globalThis.window.confirm('Tem certeza que deseja deletar este post do LinkedIn?')) {
+      return
+    }
+
+    setDeletingPostId(post.id)
+    try {
+      await deleteLinkedInPost.mutateAsync(post.id)
+      toast({
+        title: 'Post deletado',
+        description: 'O post foi removido do LinkedIn com sucesso.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Erro ao deletar',
+        description: `Não foi possível deletar o post. Tente novamente. Erro: ${error}`,
+        variant: 'destructive',
+      })
+    } finally {
+      setDeletingPostId(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -202,9 +254,26 @@ export function History() {
                         {formatDate(post.createdAt)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => setSelectedPost(post)}>
-                          <Eye className="size-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => setSelectedPost(post)}>
+                            <Eye className="size-4" />
+                          </Button>
+                          {post.status === 'published' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleDeletePost(post)}
+                              disabled={deletingPostId === post.id}
+                            >
+                              {deletingPostId === post.id ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="size-4" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

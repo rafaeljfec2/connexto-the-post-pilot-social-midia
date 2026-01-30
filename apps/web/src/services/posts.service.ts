@@ -23,9 +23,10 @@ export interface Post {
   output: string
   model: string
   usage?: PostUsage | null
-  status: string
+  status: 'started' | 'success' | 'published' | 'error' | 'deleted'
   error?: string
   createdAt: string
+  publishedAt?: string
 }
 
 export interface GeneratePostRequest {
@@ -42,6 +43,7 @@ export interface GeneratePostResponse {
 
 export interface PublishLinkedInRequest {
   text: string
+  postLogId?: string
 }
 
 export interface PublishLinkedInResponse {
@@ -54,6 +56,7 @@ class PostsService {
     list: '/the-post-pilot/v1/posts',
     generate: '/the-post-pilot/v1/posts/generate',
     publishLinkedIn: '/the-post-pilot/v1/linkedin/publish',
+    deleteLinkedIn: '/the-post-pilot/v1/linkedin/post',
   }
 
   async list(): Promise<Post[]> {
@@ -81,6 +84,13 @@ class PostsService {
 
   async delete(id: string): Promise<void> {
     await api.delete(`${this.ENDPOINTS.list}/${id}`)
+  }
+
+  async deleteLinkedInPost(postLogId: string): Promise<{ status: string }> {
+    const response = await api.delete<{ status: string }>(
+      `${this.ENDPOINTS.deleteLinkedIn}/${postLogId}`
+    )
+    return response.data
   }
 
   async update(id: string, data: Partial<Post>): Promise<Post> {

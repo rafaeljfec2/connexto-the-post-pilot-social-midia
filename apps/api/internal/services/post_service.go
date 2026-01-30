@@ -19,7 +19,8 @@ import (
 
 type PostService interface {
 	GeneratePost(ctx context.Context, user *models.User, topic string) (*GeneratePostResponse, error)
-	PublishOnLinkedIn(ctx context.Context, accessToken, personUrn, text string) (string, error)
+	PublishOnLinkedIn(ctx context.Context, userID primitive.ObjectID, postLogID primitive.ObjectID, accessToken, personUrn, text string) (string, error)
+	DeleteLinkedInPost(ctx context.Context, userID primitive.ObjectID, postLogID primitive.ObjectID, accessToken, externalPostID string) error
 	ListPosts(ctx context.Context, userId primitive.ObjectID, limit int) ([]models.PostGenerationLog, error)
 }
 
@@ -160,8 +161,10 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen] + "..."
 }
 
-func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, personUrn, text string) (string, error) {
+func (s *postService) PublishOnLinkedIn(ctx context.Context, userID primitive.ObjectID, postLogID primitive.ObjectID, accessToken, personUrn, text string) (string, error) {
 	log.Logger.Info("Starting LinkedIn publish",
+		zap.String("userId", userID.Hex()),
+		zap.String("postLogId", postLogID.Hex()),
 		zap.String("personUrn", personUrn),
 		zap.Int("textLength", len(text)),
 	)
@@ -183,13 +186,14 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 	}
 	createdAt := time.Now().UTC()
 	logEntry := &models.SocialPostStories{
-		UserID:      primitive.NilObjectID,
-		Network:     "linkedin",
-		PostContent: text,
-		Payload:     payload,
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
-		Status:      "started",
+		UserID:              userID,
+		PostGenerationLogID: postLogID,
+		Network:             "linkedin",
+		PostContent:         text,
+		Payload:             payload,
+		CreatedAt:           createdAt,
+		UpdatedAt:           createdAt,
+		Status:              "started",
 	}
 
 	body, err := json.Marshal(payload)
@@ -283,6 +287,16 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 		logEntry.Status = "success"
 		logEntry.ExternalPostID = result.ID
 		_, _ = s.storiesRepository.Create(ctx, logEntry)
+
+		// Update PostGenerationLog status to "published"
+		if postLogID != primitive.NilObjectID {
+			_ = s.logRepository.UpdateByID(ctx, postLogID, bson.M{
+				"$set": bson.M{
+					"status":      "published",
+					"publishedAt": time.Now().UTC(),
+				},
+			})
+		}
 		return result.ID, nil
 	}
 	if postId := resp.Header.Get("x-restli-id"); postId != "" {
@@ -293,6 +307,16 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 		logEntry.Status = "success"
 		logEntry.ExternalPostID = postId
 		_, _ = s.storiesRepository.Create(ctx, logEntry)
+
+		// Update PostGenerationLog status to "published"
+		if postLogID != primitive.NilObjectID {
+			_ = s.logRepository.UpdateByID(ctx, postLogID, bson.M{
+				"$set": bson.M{
+					"status":      "published",
+					"publishedAt": time.Now().UTC(),
+				},
+			})
+		}
 		return postId, nil
 	}
 	log.Logger.Error("LinkedIn publish failed - no post ID returned",
@@ -306,4 +330,101 @@ func (s *postService) PublishOnLinkedIn(ctx context.Context, accessToken, person
 
 func (s *postService) ListPosts(ctx context.Context, userId primitive.ObjectID, limit int) ([]models.PostGenerationLog, error) {
 	return s.logRepository.ListByUser(ctx, userId, limit)
+}
+
+func (s *postService) DeleteLinkedInPost(ctx context.Context, userID primitive.ObjectID, postLogID primitive.ObjectID, accessToken, externalPostID string) error {
+	log.Logger.Info("Starting LinkedIn post deletion",
+		zap.String("userId", userID.Hex()),
+		zap.String("postLogId", postLogID.Hex()),
+		zap.String("externalPostId", externalPostID),
+	)
+
+	resolvedPostID, err := s.resolveExternalPostID(ctx, postLogID, externalPostID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.callLinkedInDeleteAPI(accessToken, resolvedPostID); err != nil {
+		return err
+	}
+
+	log.Logger.Info("LinkedIn post deleted successfully", zap.String("externalPostId", resolvedPostID))
+
+	s.markPostAsDeleted(ctx, postLogID)
+	return nil
+}
+
+func (s *postService) resolveExternalPostID(ctx context.Context, postLogID primitive.ObjectID, externalPostID string) (string, error) {
+	if externalPostID != "" {
+		return externalPostID, nil
+	}
+
+	if s.storiesRepository == nil || postLogID == primitive.NilObjectID {
+		return "", fmt.Errorf("no LinkedIn post ID found")
+	}
+
+	story, err := s.storiesRepository.GetByPostLogID(ctx, postLogID)
+	if err != nil {
+		log.Logger.Error("Failed to get social post story", zap.Error(err))
+		return "", fmt.Errorf("failed to find post: %w", err)
+	}
+
+	if story == nil {
+		log.Logger.Warn("No social post story found for post log ID", zap.String("postLogId", postLogID.Hex()))
+		return "", fmt.Errorf("post not found or not published to LinkedIn")
+	}
+
+	return story.ExternalPostID, nil
+}
+
+func (s *postService) callLinkedInDeleteAPI(accessToken, externalPostID string) error {
+	url := fmt.Sprintf("https://api.linkedin.com/v2/ugcPosts/%s", externalPostID)
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		log.Logger.Error("Failed to create LinkedIn delete request", zap.Error(err))
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("X-Restli-Protocol-Version", "2.0.0")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Logger.Error("LinkedIn delete request failed", zap.Error(err))
+		return err
+	}
+	defer resp.Body.Close()
+
+	return s.handleLinkedInDeleteResponse(resp)
+}
+
+func (s *postService) handleLinkedInDeleteResponse(resp *http.Response) error {
+	if resp.StatusCode == 401 || resp.StatusCode == 403 {
+		log.Logger.Warn("LinkedIn token expired or invalid for deletion", zap.Int("statusCode", resp.StatusCode))
+		return fmt.Errorf("LinkedIn token expired or invalid. Please reconnect your LinkedIn account")
+	}
+
+	if resp.StatusCode != 204 && resp.StatusCode != 200 {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Logger.Error("LinkedIn delete API error", zap.Int("statusCode", resp.StatusCode), zap.String("response", string(respBody)))
+		return fmt.Errorf("LinkedIn API error: %s", string(respBody))
+	}
+
+	return nil
+}
+
+func (s *postService) markPostAsDeleted(ctx context.Context, postLogID primitive.ObjectID) {
+	if postLogID != primitive.NilObjectID {
+		_ = s.logRepository.UpdateByID(ctx, postLogID, bson.M{
+			"$set": bson.M{"status": "deleted"},
+		})
+	}
+
+	if s.storiesRepository != nil {
+		story, _ := s.storiesRepository.GetByPostLogID(ctx, postLogID)
+		if story != nil {
+			_ = s.storiesRepository.UpdateStatus(ctx, story.ID, "deleted")
+		}
+	}
 }

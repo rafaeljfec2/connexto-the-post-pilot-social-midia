@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/rafaelcmd/connexto-vps-deploy-paas/main/paasdeploy.schema.json",
+  "name": "the-post-pilot-api",
+  "build": {
+    "type": "dockerfile",
+    "dockerfile": "./Dockerfile",
+    "context": "."
+  },
+  "port": 8081,
+  "healthcheck": {
+    "path": "/the-post-pilot/v1/health",
+    "interval": "30s",
+    "timeout": "3s",
+    "retries": 3,
+    "startPeriod": "10s"
+  },
+  "env": {
+    "TZ": "America/Sao_Paulo",
+    "PORT": "8081"
+  },
+  "resources": {
+    "memory": "512m",
+    "cpu": "0.5"
+  }
+}
