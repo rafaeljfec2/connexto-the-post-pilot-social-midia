@@ -1,194 +1,226 @@
 # The Post Pilot API
 
-API para gerenciamento e automação de posts e interações em redes sociais com inteligência artificial.
+API backend em Go/Fiber para gerenciamento e automação de posts em redes sociais com inteligência artificial.
+
+## Tech Stack
+
+- **Go 1.21+** - Linguagem de programação
+- **Fiber v2** - Framework HTTP
+- **MongoDB** - Banco de dados
+- **JWT** - Autenticação
+- **Swagger** - Documentação da API
+- **Zap** - Logging estruturado
 
 ## Estrutura do Projeto
 
 ```
 apps/api/
-├── cmd/           # Ponto de entrada da aplicação
-├── internal/      # Código interno da aplicação
-│   ├── app/       # Handlers HTTP
-│   ├── config/    # Configurações
-│   ├── db/        # Configuração do banco de dados
-│   ├── log/       # Sistema de logging
-│   ├── middleware/# Middlewares HTTP
-│   ├── models/    # Definições de entidades
-│   ├── repositories/# Acesso a dados
-│   └── services/  # Lógica de negócio
-├── pkg/           # Código reutilizável
-└── docs/          # Documentação
+├── main.go              # Ponto de entrada da aplicação
+├── Dockerfile           # Configuração Docker
+├── paasdeploy.json      # Configuração de deploy
+├── docs/                # Documentação Swagger
+├── internal/
+│   ├── app/             # Handlers HTTP e rotas
+│   ├── config/          # Configurações da aplicação
+│   ├── db/              # Conexão MongoDB
+│   ├── di/              # Injeção de dependências (Wire)
+│   ├── httpclient/      # Cliente HTTP reutilizável
+│   ├── log/             # Logger estruturado
+│   ├── middleware/      # Middlewares (auth, rate limit)
+│   ├── models/          # Modelos de dados
+│   ├── repositories/    # Camada de acesso a dados
+│   └── services/        # Lógica de negócio
+└── pkg/
+    └── logger/          # Utilitários de logging
 ```
 
-## Evolução da Arquitetura
+## Endpoints
 
-### Injeção de Dependências
+### Auth
 
-A arquitetura atual utiliza uma abordagem simples de injeção de dependências através de construtores. Para projetos maiores, as seguintes melhorias podem ser consideradas:
+| Método | Endpoint                  | Descrição                      |
+| ------ | ------------------------- | ------------------------------ |
+| POST   | `/auth/register`          | Registrar novo usuário         |
+| POST   | `/auth/login`             | Login com email/senha          |
+| POST   | `/auth/social`            | Login social (Google/LinkedIn) |
+| POST   | `/auth/refresh`           | Renovar token JWT              |
+| GET    | `/auth/linkedin/url`      | URL de autenticação LinkedIn   |
+| GET    | `/auth/linkedin/callback` | Callback OAuth LinkedIn        |
+| GET    | `/auth/google/url`        | URL de autenticação Google     |
+| GET    | `/auth/google/callback`   | Callback OAuth Google          |
 
-#### 1. Container de DI
+### User (Autenticado)
 
-- Implementar um container de DI mais robusto como `wire` (Google) ou `dig` (Uber)
-- Exemplo de implementação com `wire`:
+| Método | Endpoint                     | Descrição                        |
+| ------ | ---------------------------- | -------------------------------- |
+| GET    | `/me`                        | Obter perfil do usuário          |
+| PUT    | `/me`                        | Atualizar perfil                 |
+| GET    | `/auth/linkedin/publish-url` | URL para permissão de publicação |
+| DELETE | `/auth/linkedin/disconnect`  | Desconectar LinkedIn             |
 
-```go
-// wire.go
-func InitializeAPI() (*fiber.App, error) {
-    wire.Build(
-        repositories.NewUserRepository,
-        services.NewAuthService,
-        services.NewArticleService,
-        services.NewPostService,
-        appPkg.NewAuthHandler,
-        appPkg.NewArticleHandler,
-        appPkg.NewPostHandler,
-        appPkg.RegisterRoutes,
-    )
-    return nil, nil
-}
+### Posts (Autenticado)
+
+| Método | Endpoint                    | Descrição                |
+| ------ | --------------------------- | ------------------------ |
+| GET    | `/posts`                    | Listar posts gerados     |
+| POST   | `/posts/generate`           | Gerar post com IA        |
+| POST   | `/linkedin/publish`         | Publicar no LinkedIn     |
+| DELETE | `/linkedin/post/:postLogId` | Deletar post do LinkedIn |
+
+### Articles (Autenticado)
+
+| Método | Endpoint                              | Descrição             |
+| ------ | ------------------------------------- | --------------------- |
+| GET    | `/articles/suggestions`               | Sugestões de artigos  |
+| GET    | `/articles/suggestions/by/duckduckgo` | Buscar via DuckDuckGo |
+
+### System
+
+| Método | Endpoint                    | Descrição            |
+| ------ | --------------------------- | -------------------- |
+| GET    | `/`                         | Info da API          |
+| GET    | `/the-post-pilot/v1/health` | Health check         |
+| GET    | `/the-post-pilot/swagger/*` | Documentação Swagger |
+
+## Variáveis de Ambiente
+
+```env
+# Server
+PORT=8081
+ENV=development
+
+# MongoDB
+MONGO_DB=the-post-pilot
+MONGO_URL=mongodb://localhost:27017
+
+# JWT
+JWT_SECRET=your-secret-key
+JWT_EXPIRATION=24h
+
+# LinkedIn OAuth
+LINKEDIN_CLIENT_ID=
+LINKEDIN_CLIENT_SECRET=
+LINKEDIN_REDIRECT_URI=http://localhost:8081/the-post-pilot/v1/auth/linkedin/callback
+LINKEDIN_PUBLISH_REDIRECT_URI=http://localhost:8081/the-post-pilot/v1/auth/linkedin/publish-callback
+
+# Google OAuth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:8081/the-post-pilot/v1/auth/google/callback
+
+# Frontend
+FRONT_END_URL=http://localhost:3000/login
 ```
-
-#### 2. Interface Segregation
-
-- Refinar interfaces para melhor separação de responsabilidades
-
-```go
-type ArticleFetcher interface {
-    FetchArticles(ctx context.Context, params FetchParams) ([]Article, error)
-}
-
-type ArticleFilter interface {
-    FilterArticles(articles []Article, criteria FilterCriteria) []Article
-}
-```
-
-#### 3. Context Injection
-
-- Adicionar injeção de contexto para melhor controle de ciclo de vida
-
-```go
-type ServiceContext interface {
-    Context() context.Context
-    WithTimeout(timeout time.Duration) context.Context
-}
-```
-
-#### 4. Configuration Injection
-
-- Melhorar injeção de configurações
-
-```go
-type ServiceConfig interface {
-    GetTimeout() time.Duration
-    GetMaxRetries() int
-    GetCacheConfig() CacheConfig
-}
-```
-
-### Melhorias de Arquitetura
-
-#### 1. Testabilidade
-
-- Adicionar interfaces para facilitar mocking
-
-```go
-type Clock interface {
-    Now() time.Time
-}
-
-type realClock struct{}
-
-func (c *realClock) Now() time.Time {
-    return time.Now()
-}
-```
-
-#### 2. Lifecycle Management
-
-- Implementar gerenciamento de ciclo de vida dos serviços
-
-```go
-type Service interface {
-    Start(ctx context.Context) error
-    Stop(ctx context.Context) error
-}
-```
-
-#### 3. Health Checks
-
-- Adicionar verificações de saúde dos serviços
-
-```go
-type HealthChecker interface {
-    CheckHealth() error
-}
-
-func (s *articleService) CheckHealth() error {
-    // Implementar verificação de saúde do serviço
-}
-```
-
-#### 4. Observabilidade
-
-- Implementar métricas e tracing
-- Melhorar logging estruturado
-- Adicionar APM (Application Performance Monitoring)
-
-#### 5. Resiliência
-
-- Implementar circuit breakers
-- Adicionar retry policies
-- Melhorar tratamento de falhas
-
-#### 6. Cache
-
-- Implementar cache em múltiplas camadas
-- Adicionar cache distribuído
-- Implementar estratégias de invalidação
-
-### Prioridades de Evolução
-
-1. **Curto Prazo**
-
-   - Implementar health checks
-   - Melhorar logging estruturado
-   - Adicionar métricas básicas
-
-2. **Médio Prazo**
-
-   - Implementar container de DI
-   - Refinar interfaces
-   - Adicionar cache
-
-3. **Longo Prazo**
-   - Implementar APM
-   - Adicionar circuit breakers
-   - Implementar cache distribuído
 
 ## Como Executar
+
+### Desenvolvimento Local
 
 ```bash
 # Instalar dependências
 go mod download
 
-# Executar em desenvolvimento
-go run cmd/api/main.go
+# Copiar variáveis de ambiente
+cp .env.example .env
 
-# Executar testes
-go test ./...
+# Executar
+go run main.go
+```
 
-# Build
-go build -o bin/api cmd/api/main.go
+### Com Docker Compose (raiz do projeto)
+
+```bash
+# Subir API + MongoDB
+docker compose up -d
+
+# Ver logs
+docker compose logs -f api
+```
+
+### Build
+
+```bash
+# Build local
+go build -o bin/api main.go
+
+# Build Docker
+docker build -t the-post-pilot-api .
 ```
 
 ## Documentação da API
 
-A documentação da API está disponível via Swagger em `/swagger` quando o servidor está rodando.
+Acesse a documentação Swagger em:
 
-## Contribuição
+- Local: http://localhost:8081/the-post-pilot/swagger/
 
-1. Fork o projeto
-2. Crie sua feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+### Gerar/Atualizar Swagger
+
+```bash
+# Instalar swag
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Gerar docs
+swag init -g main.go -o docs
+```
+
+## Testes
+
+```bash
+# Executar todos os testes
+go test ./...
+
+# Com coverage
+go test -cover ./...
+
+# Verbose
+go test -v ./...
+```
+
+## Deploy
+
+O arquivo `paasdeploy.json` contém a configuração para deploy:
+
+```json
+{
+  "name": "the-post-pilot-api",
+  "port": 8081,
+  "healthcheck": {
+    "path": "/the-post-pilot/v1/health"
+  }
+}
+```
+
+## Arquitetura
+
+### Injeção de Dependências
+
+O projeto utiliza [Wire](https://github.com/google/wire) para injeção de dependências:
+
+```go
+// internal/di/wire.go
+func InitializeApp() (*app.Application, error) {
+    wire.Build(
+        db.GetDatabase,
+        repositories.NewUserRepositoryWithDB,
+        services.NewAuthServiceWithDeps,
+        // ...
+    )
+    return nil, nil
+}
+```
+
+### Fluxo de Publicação
+
+```
+[Gerar Post] → PostGenerationLog
+      ↓
+[Publicar] → SocialPostStories
+      ↓
+[LinkedIn API] → status: published
+```
+
+### Modelos Principais
+
+- **User** - Dados do usuário e tokens OAuth
+- **PostGenerationLog** - Histórico de posts gerados pela IA
+- **SocialPostStories** - Posts publicados nas redes sociais
