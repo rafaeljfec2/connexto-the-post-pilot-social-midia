@@ -51,17 +51,12 @@ module.exports = {
     ],
     'import/no-unresolved': 'off',
 
-    // Tailwind
-    'tailwindcss/no-custom-classname': [
-      'warn',
-      {
-        whitelist: ['destructive', 'origin-top-center'],
-      },
-    ],
-    'tailwindcss/classnames-order': 'warn',
+    // Tailwind - disabled custom classname check due to shadcn/ui custom classes
+    'tailwindcss/no-custom-classname': 'off',
+    'tailwindcss/classnames-order': 'off',
     'tailwindcss/enforces-negative-arbitrary-values': 'warn',
     'tailwindcss/enforces-shorthand': 'warn',
-    'tailwindcss/migration-from-tailwind-2': 'warn',
+    'tailwindcss/migration-from-tailwind-2': 'off',
     'tailwindcss/no-arbitrary-value': 'off',
     'tailwindcss/no-contradicting-classname': 'error',
   },

@@ -61,6 +61,18 @@ function truncateText(text: string, maxLength = 50): string {
   return text.slice(0, maxLength).trim() + '...'
 }
 
+function getStatusVariant(status: string): 'default' | 'destructive' | 'secondary' {
+  if (status === 'published') return 'default'
+  if (status === 'error') return 'destructive'
+  return 'secondary'
+}
+
+function getStatusLabel(status: string): string {
+  if (status === 'success') return 'Pendente'
+  if (status === 'published') return 'Publicado'
+  return status
+}
+
 export function History() {
   const { data: posts, isLoading } = usePosts()
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
@@ -139,16 +151,18 @@ export function History() {
           <CardTitle className="text-lg font-medium">Todos os Posts</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="size-8 animate-spin text-primary" />
             </div>
-          ) : allPosts.length === 0 ? (
+          )}
+          {!isLoading && allPosts.length === 0 && (
             <div className="flex flex-col items-center gap-3 py-12">
               <FileText className="size-8 text-muted-foreground" />
               <p className="text-muted-foreground">Nenhum post encontrado</p>
             </div>
-          ) : (
+          )}
+          {!isLoading && allPosts.length > 0 && (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
@@ -172,22 +186,12 @@ export function History() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={
-                            post.status === 'published'
-                              ? 'default'
-                              : post.status === 'error'
-                                ? 'destructive'
-                                : 'secondary'
-                          }
+                          variant={getStatusVariant(post.status)}
                           className={
                             post.status === 'published' ? 'bg-success text-success-foreground' : ''
                           }
                         >
-                          {post.status === 'success'
-                            ? 'Pendente'
-                            : post.status === 'published'
-                              ? 'Publicado'
-                              : post.status}
+                          {getStatusLabel(post.status)}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">
