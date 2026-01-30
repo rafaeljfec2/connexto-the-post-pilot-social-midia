@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/rafaelcmd/connexto-vps-deploy-paas/main/paasdeploy.schema.json",
   "name": "the-post-pilot-api",
-  "runtime": "nodejs",
+  "runtime": "go",
   "build": {
     "type": "dockerfile",
     "dockerfile": "./Dockerfile",
