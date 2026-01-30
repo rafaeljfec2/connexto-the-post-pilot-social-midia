@@ -1,9 +1,9 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import DOMPurify from 'dompurify'
 import { ExternalLink, Sparkles, Calendar, X } from 'lucide-react'
 import type { Article } from '@/services/suggestions.service'
-import DOMPurify from 'dompurify'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface SuggestionCardProps {
   readonly article: Article

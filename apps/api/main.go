@@ -79,6 +79,15 @@ func main() {
 	fiberApp.Use(middleware.RateLimit())
 	fiberApp.Use(log.StructuredLogger())
 
+	fiberApp.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"name":    "Post Pilot API",
+			"version": "1.0",
+			"status":  "running",
+			"docs":    "/the-post-pilot/v1/swagger/",
+		})
+	})
+
 	appPkg.RegisterRoutes(
 		fiberApp,
 		application.AuthHandler,

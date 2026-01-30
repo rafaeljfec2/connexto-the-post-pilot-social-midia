@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode, useMemo } from 'react'
+import type { User } from '@/services/auth.service'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/auth'
-import type { User } from '@/services/auth.service'
 
 interface AuthContextType {
   user: User | null

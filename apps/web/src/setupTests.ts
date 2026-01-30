@@ -5,4 +5,4 @@ import { afterEach } from 'vitest'
 // Limpa o DOM após cada teste
 afterEach(() => {
   cleanup()
-}) 
+})

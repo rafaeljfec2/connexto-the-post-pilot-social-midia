@@ -1,3 +1,8 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Loader2, Save, Copy, Check } from 'lucide-react'
+import { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -6,15 +11,10 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { postsService, Post } from '@/services/posts.service'
 import { useToast } from '@/components/ui/use-toast'
 import { POSTS_QUERY_KEY } from '@/hooks/usePosts'
-import { Loader2, Save, Copy, Check } from 'lucide-react'
+import { postsService, Post } from '@/services/posts.service'
 
 interface EditPostModalProps {
   readonly post: Post

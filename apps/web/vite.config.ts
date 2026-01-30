@@ -1,7 +1,7 @@
-import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
-import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import react from '@vitejs/plugin-react'
+import { defineConfig, loadEnv } from 'vite'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: Number.parseInt(env.VITE_PORT || '3000'),
+      host: true,
       proxy: {
         '/the-post-pilot/v1': {
           target: env.VITE_API_URL || 'http://localhost:8081',

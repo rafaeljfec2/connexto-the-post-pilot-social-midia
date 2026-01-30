@@ -1,16 +1,4 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
-import { SuggestionCard } from '@/components/suggestions/SuggestionCard'
-import { useSuggestions, SuggestionsFilters } from '@/hooks/useSuggestions'
-import { useGeneratePost } from '@/hooks/usePosts'
-import { useToast } from '@/components/ui/use-toast'
-import { translateError } from '@/utils/errorMessages'
-import type { Article } from '@/services/suggestions.service'
+import { motion } from 'framer-motion'
 import {
   Sparkles,
   Search,
@@ -22,6 +10,20 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import type { Article } from '@/services/suggestions.service'
+import { SuggestionCard } from '@/components/suggestions/SuggestionCard'
+import { FadeIn } from '@/components/ui/animations'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/components/ui/use-toast'
+import { useGeneratePost } from '@/hooks/usePosts'
+import { useSuggestions, SuggestionsFilters } from '@/hooks/useSuggestions'
+import { translateError } from '@/utils/errorMessages'
 
 const quickFilters = [
   { label: 'Todos', value: '' },
@@ -139,13 +141,20 @@ export function Suggestions() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Criar Conteúdo</h1>
-        <p className="text-muted-foreground">
-          Use IA para encontrar inspiração e gerar posts para suas redes sociais.
-        </p>
-      </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <FadeIn>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Criar Conteúdo</h1>
+          <p className="text-muted-foreground">
+            Use IA para encontrar inspiração e gerar posts para suas redes sociais.
+          </p>
+        </div>
+      </FadeIn>
 
       <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardContent className="p-4 md:p-6">
@@ -328,6 +337,6 @@ export function Suggestions() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }

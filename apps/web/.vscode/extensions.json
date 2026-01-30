@@ -15,12 +15,6 @@
     "gruntfuggly.todo-tree",
     "wix.vscode-import-cost",
     "mrmlnc.vscode-attrs-sorter",
-    "mrmlnc.vscode-duplicate",
-    "mikestead.dotenv",
-    "eamodio.gitlens",
-    "gruntfuggly.todo-tree",
-    "wix.vscode-import-cost",
-    "mrmlnc.vscode-attrs-sorter",
     "mrmlnc.vscode-duplicate"
   ]
-} 
+}

@@ -1,18 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
-import { useAuth } from '@/hooks/useAuth'
-import { useState, useEffect } from 'react'
-import { authService } from '@/services/auth.service'
-import { useToast } from '@/components/ui/use-toast'
 import {
   Key,
   Bot,
@@ -26,6 +11,21 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/hooks/useAuth'
+import { authService } from '@/services/auth.service'
 
 interface DataSourceInput {
   type: 'rss' | 'devto' | 'hackernews'

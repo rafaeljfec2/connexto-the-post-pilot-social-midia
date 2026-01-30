@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { authService, User, type LoginCredentials } from '@/services/auth.service'
 import { useAuthStore } from '@/stores/auth'
 import { authUtils } from '@/utils/auth'

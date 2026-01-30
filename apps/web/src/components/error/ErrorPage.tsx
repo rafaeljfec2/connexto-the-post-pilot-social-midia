@@ -1,13 +1,13 @@
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 
 interface ErrorPageProps {
-  code?: number;
-  message?: string;
+  code?: number
+  message?: string
 }
 
 export function ErrorPage({ code = 404, message = 'Página não encontrada' }: ErrorPageProps) {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center gap-4">
@@ -15,5 +15,5 @@ export function ErrorPage({ code = 404, message = 'Página não encontrada' }: E
       <p className="text-lg text-muted-foreground">{message}</p>
       <Button onClick={() => navigate(-1)}>Voltar</Button>
     </div>
-  );
-} 
+  )
+}

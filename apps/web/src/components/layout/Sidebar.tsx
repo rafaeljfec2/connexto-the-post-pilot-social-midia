@@ -1,10 +1,10 @@
-import { cn } from '@/lib/utils'
+import { Sparkles, FileText, LayoutDashboard, Settings, User, Menu, Send } from 'lucide-react'
+import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { Sparkles, FileText, LayoutDashboard, Settings, User, Menu, Send } from 'lucide-react'
-import { useState } from 'react'
+import { cn } from '@/lib/utils'
 
 interface NavItem {
   readonly label: string

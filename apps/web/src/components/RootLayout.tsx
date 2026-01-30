@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
-import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from '@/components/ui/toaster'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export function RootLayout() {
   return (

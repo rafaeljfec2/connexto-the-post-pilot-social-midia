@@ -1,10 +1,7 @@
-import { Button } from '@/components/ui/button'
-import { useTheme } from '@/hooks/useTheme'
 import { Moon, Sun, Bell, LogOut, ChevronRight } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useToast } from '@/components/ui/use-toast'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useAuth } from '@/hooks/useAuth'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -13,6 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
+import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/hooks/useTheme'
 
 const routeTitles: Record<string, string> = {
   '/app': 'Dashboard',

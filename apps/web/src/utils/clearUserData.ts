@@ -1,7 +1,7 @@
-import { useAuthStore } from '@/stores/auth'
+import { QueryClient } from '@tanstack/react-query'
 import { authUtils } from './auth'
 import { api } from '@/lib/axios'
-import { QueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/stores/auth'
 
 /**
  * Limpa todos os dados do usuário atual, incluindo:

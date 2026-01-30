@@ -1,6 +1,8 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Edit2, Send, Calendar, Trash2, MoreHorizontal, Linkedin, Clock } from 'lucide-react'
+import type { Post } from '@/services/posts.service'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Edit2, Send, Calendar, Trash2, MoreHorizontal, Linkedin, Clock } from 'lucide-react'
-import type { Post } from '@/services/posts.service'
 
 interface PostListItemProps {
   readonly post: Post
