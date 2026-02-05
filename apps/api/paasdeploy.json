@@ -8,7 +8,7 @@
     "context": "."
   },
   "port": 3000,
-  "hostPort": 3000,
+  "hostPort": 3003,
   "healthcheck": {
     "path": "/the-post-pilot/v1/health",
     "interval": "30s",
